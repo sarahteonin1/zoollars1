@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, StyleSheet } from 'react-native';
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from './screens/login';
@@ -28,24 +28,16 @@ export default function App() {
               const navigation = useNavigation();
               return(
                 <TouchableOpacity
-                  style={styles.backButton}
                   onPress={() => navigation.goBack()}
                 >
                   <Ionicons name="chevron-back-outline" size={24} color="black"/>
                 </TouchableOpacity>
               );
             },
+            headerTitle: '', 
           }}
         />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create( {
-  backButton: {
-    padding: 10,
-    size: 24,
-    color: 'black',
-  }
-})

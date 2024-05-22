@@ -13,32 +13,41 @@ export default function SignupScreen() {
       };
 
     return (
-    <View style={styles.container}>
-      <Text style={styles.welcome}>Welcome to Zoollars!</Text>
-      <Image source={{uri: "/Users/sarahfaith/Documents/zoollars1/assets/panda.png"}} 
-          style={styles.image}
-          resizeMode="contain"
-        />
-      <Text style={styles.text}>What should we call you?</Text>
-      <TextInput
-            style={styles.nameInput}
-            placeholder="Enter your name"
-            value={name}
-            onChangeText={handleNameChange}
-          />
-          <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-            <Text style={styles.buttonText}>Submit</Text>
-          </TouchableOpacity>
-    </View>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container1}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.container}>
+            <Text style={styles.welcome}>Welcome to Zoollars!</Text>
+            <Image source={{uri: "/Users/sarahfaith/Documents/zoollars1/assets/panda.png"}} 
+                style={styles.image}
+                resizeMode="contain"
+              />
+            <Text style={styles.text}>What should we call you?</Text>
+            <TextInput
+                  style={styles.nameInput}
+                  placeholder="Enter your name"
+                  value={name}
+                  onChangeText={handleNameChange}
+                />
+                <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+                  <Text style={styles.buttonText}>Submit</Text>
+                </TouchableOpacity>
+          </View>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: 'white'
+  },
+  container1: {
+    flex: 1,
   },
   welcome: {
     fontWeight: 'bold',
