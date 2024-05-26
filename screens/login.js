@@ -1,19 +1,42 @@
 import React, { useState } from "react";
 import { Text, View, Image, TextInput, StyleSheet, Button, TouchableOpacity, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform } from "react-native";
 import { useNavigation } from '@react-navigation/native';
+import { doc, setDoc, collection } from 'firebase/firestore';
+import 'firebase/firestore';
+import { app, db } from '../firebaseConfig';
 
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const navigation = useNavigation();
 
   const handleEmailChange = (text) => {
     setEmail(text);
   };
 
+  const handlePasswordChange = (text) => {
+    setPassword(text);
+  };
+
   const handleSubmit = () => {
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+      console.error("Invalid email format");
+      return;
+    }
+
     console.log('Email:', email);
-    navigation.navigate('SignupPage');
+    console.log('Password:', password);
+    setDoc(doc(collection(db, 'users'), email), {
+      email: email,
+      password: password,
+      timestamp: new Date(),
+    }).then(() => {
+      navigation.navigate('SignupPage', { email: email, password: password });
+    }).catch((error) => {
+      console.error("Error adding email: ", error);
+    });
   };
 
   return (
@@ -34,6 +57,12 @@ export default function LoginScreen() {
             placeholder="Enter your email"
             value={email}
             onChangeText={handleEmailChange}
+          />
+          <TextInput
+            style={styles.emailInput}
+            placeholder="Enter your password"
+            value={password}
+            onChangeText={handlePasswordChange}
           />
           <TouchableOpacity style={styles.button} onPress={handleSubmit}>
             <Text style={styles.buttonText}>Sign up with email</Text>

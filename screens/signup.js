@@ -1,16 +1,35 @@
 import React, { useState } from 'react';
-import { Text, View, Image, TextInput, StyleSheet, Button, TouchableOpacity, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform } from "react-native";
+import { Text, View, Image, TextInput, StyleSheet, TouchableOpacity, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform } from "react-native";
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { doc, setDoc, collection } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 
 export default function SignupScreen() {
     const [name, setName] = useState("");
+    const navigation = useNavigation();
+    const route = useRoute();
+    const email = route.params.email || "";
+    const password = route.params.password || "";
 
     const handleNameChange = (text) => {
         setName(text);
       };
-    
-      const handleSubmit = () => {
-        console.log('Name:', name);
-      };
+   
+    const handleSubmit = () => {
+      console.log('Email:', email);
+      console.log('Name:', name);
+      console.log('Password:', password);
+      setDoc(doc(collection(db, 'users'), email), {
+          name: name,
+          email: email,
+          password: password,
+          timestamp: new Date(),
+      }).then(() => {
+          // Do nothing on successful submission
+      }).catch((error) => {
+          console.error("Error adding user: ", error);
+      });
+  };
 
     return (
       <KeyboardAvoidingView 

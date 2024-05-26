@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from "react";
 import { TouchableOpacity, StyleSheet } from 'react-native';
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -9,8 +9,6 @@ import { Ionicons } from '@expo/vector-icons';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
-  
-
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="LoginPage">
