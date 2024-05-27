@@ -21,10 +21,19 @@ export default function LoginScreen() {
 
   const handleSubmit = () => {
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // const passwordPattern = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}$/;
+
     if (!emailPattern.test(email)) {
       console.error("Invalid email format");
       return;
     }
+
+    /*
+    if (!passwordPattern.test(password)) {
+      console.error("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
+      return;
+    }
+    */
 
     console.log('Email:', email);
     console.log('Password:', password);
