@@ -26,6 +26,7 @@ export default function SignupScreen() {
           timestamp: new Date(),
       }).then(() => {
           // Do nothing on successful submission
+          navigation.navigate('Home', { name, email });
       }).catch((error) => {
           console.error("Error adding user: ", error);
       });
