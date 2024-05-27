@@ -45,8 +45,11 @@ const StackNav = () => {
         }}
       >
         <Stack.Screen 
-        name="Welcome," 
+        name="Home" 
         component={HomeScreen}
+        options={({ route }) => ({
+          title: route.params ? `Welcome, ${route.params.name}` : 'Welcome',
+        })}
         />
         <Stack.Screen name="Add Expenditure" component={AddExpenditureScreen} 
           options={{
