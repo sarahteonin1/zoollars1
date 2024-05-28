@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { TouchableOpacity } from 'react-native';
-import { Entypo, Ionicons, Feather, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
+import { Entypo, Ionicons, Feather, FontAwesome, FontAwesome5, FontAwesome6, MaterialIcons } from '@expo/vector-icons';
 
 import LoginScreen from './screens/login';
 import SignupScreen from './screens/signup';
@@ -95,7 +95,7 @@ const DrawerNav = ({ onLogout, userData }) => {
       </Drawer.Screen> 
       <Drawer.Screen name="Home"
       options={{ headerShown: false,
-        drawerIcon: ({ color }) => <Feather name="home" size={24} color="black"  paddingLeft={10}/>,
+        drawerIcon: ({ color }) => <Feather name="home" size={24} color="black" paddingLeft={10}/>,
       }}
       >
         {props => <StackNav {...props} userData={userData} />}
@@ -105,15 +105,31 @@ const DrawerNav = ({ onLogout, userData }) => {
         drawerIcon: ({ color }) => <FontAwesome5 name="money-bill-alt" size={20} color="black" paddingLeft={10}/>,
       }}
       />
-      <Drawer.Screen name="Budget Overview" component={BudgetScreen} />
-      <Drawer.Screen name="Goals" component={GoalsScreen} />
-      <Drawer.Screen name="Challenges" component={ChallengesScreen} />
-      <Drawer.Screen name="Store" component={StoreScreen} 
+      <Drawer.Screen name="  Budget Overview" component={BudgetScreen} 
       options={{
-        drawerIcon: ({ color }) => <MaterialIcons name="storefront" size={27} color="black"  paddingLeft={10}/>,
+        drawerIcon: ({ color }) => <FontAwesome name="dollar" size={22} color="black" paddingLeft={15}/>,
       }}
       />
-      <Drawer.Screen name="Friends" component={FriendsScreen} />
+      <Drawer.Screen name="Goals" component={GoalsScreen} 
+      options={{
+        drawerIcon: ({ color }) => <FontAwesome5 name="flag" size={22} color="black" paddingLeft={13}/>,
+      }}
+      />
+      <Drawer.Screen name="Challenges" component={ChallengesScreen} 
+      options={{
+        drawerIcon: ({ color }) => <FontAwesome6 name="list-check" size={22} color="black" paddingLeft={13}/>,
+      }}
+      />
+      <Drawer.Screen name="Store" component={StoreScreen} 
+      options={{
+        drawerIcon: ({ color }) => <MaterialIcons name="storefront" size={27} color="black" paddingLeft={10}/>,
+      }}
+      />
+      <Drawer.Screen name="Friends" component={FriendsScreen}
+      options={{
+        drawerIcon: ({ color }) => <Ionicons name="people-outline" size={27} color="black"  paddingLeft={10}/>,
+      }}
+      />
     </Drawer.Navigator>
   );
 }

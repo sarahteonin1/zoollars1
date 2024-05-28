@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { Text, View, Image, TextInput, StyleSheet, Button, TouchableOpacity, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform } from "react-native";
 import { useNavigation } from '@react-navigation/native';
-import { doc, setDoc, collection } from 'firebase/firestore';
+import { doc, setDoc, collection, getDoc } from 'firebase/firestore';
 import 'firebase/firestore';
-import { app, db } from '../firebaseConfig';
+import { db } from '../firebaseConfig';
 
 
 export default function LoginScreen() {
@@ -35,16 +35,24 @@ export default function LoginScreen() {
     }
     */
 
-    console.log('Email:', email);
-    console.log('Password:', password);
-    setDoc(doc(collection(db, 'users'), email), {
-      email: email,
-      password: password,
-      timestamp: new Date(),
-    }).then(() => {
-      navigation.navigate('SignupPage', { email: email, password: password });
+    const userDocRef = doc(db, 'users', email);
+    
+    getDoc(userDocRef).then((userDoc) => {
+      if (userDoc.exists()) {
+        console.error("Email already in use");
+      } else {
+        setDoc(userDocRef, {
+          email: email,
+          password: password,
+          timestamp: new Date(),
+        }).then(() => {
+          navigation.navigate('SignupPage', { email: email, password: password });
+        }).catch((error) => {
+          console.error("Error adding email: ", error);
+        });
+      }
     }).catch((error) => {
-      console.error("Error adding email: ", error);
+      console.error("Error checking email: ", error);
     });
   };
 
