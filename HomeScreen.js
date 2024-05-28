@@ -8,7 +8,9 @@ export default function HomeScreen() {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.welcome}>Welcome, {name}!</Text>
+            <Text>My zoo</Text>
+            <Text>Total spending today</Text>
+            <Text>Today's spendings</Text>
         </View>
       );
   }

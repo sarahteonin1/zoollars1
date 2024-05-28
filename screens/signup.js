@@ -4,7 +4,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { doc, setDoc, collection } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
-export default function SignupScreen() {
+export default function SignupScreen({ onLogin }) {
     const [name, setName] = useState("");
     const navigation = useNavigation();
     const route = useRoute();
@@ -25,8 +25,13 @@ export default function SignupScreen() {
           password: password,
           timestamp: new Date(),
       }).then(() => {
-          // Do nothing on successful submission
-          navigation.navigate('Home', { name, email });
+          // Navigate to homescreen on successful submission
+          const user = { name, email, password };
+          onLogin(user);
+          navigation.navigate('Home', {
+            screen: 'Home Screen', 
+            params: { name, email, password } 
+          });
       }).catch((error) => {
           console.error("Error adding user: ", error);
       });
