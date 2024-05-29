@@ -7,7 +7,8 @@ import { TouchableOpacity } from 'react-native';
 import { Entypo, Ionicons, Feather, FontAwesome, FontAwesome5, FontAwesome6, MaterialIcons } from '@expo/vector-icons';
 
 import LoginScreen from './screens/login';
-import SignupScreen from './screens/signup';
+import SignupScreen1 from './screens/signup1';
+import SignupScreen2 from './screens/signup2';
 import HomeScreen from './HomeScreen';
 import ProfileScreen from './ProfileScreen';
 import SpendingScreen from './SpendingScreen';
@@ -141,12 +142,30 @@ const LoginNav = ({ onLogin }) => {
   return (
     <LoginStack.Navigator initialRouteName="LoginPage">
       <LoginStack.Screen 
-        name="LoginPage" 
-        component={LoginScreen} 
+        name="LoginPage"
         options={{ headerShown: false }}
+      >
+        {props => <LoginScreen {...props} onLogin={onLogin} navigation={navigation} />}
+      </LoginStack.Screen>  
+      <LoginStack.Screen 
+        name="SignupPage1" 
+        component={SignupScreen1} 
+        options={{
+          headerShown: true,
+          headerLeft: () => {
+            return(
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+              >
+                <Ionicons name="chevron-back-outline" size={24} color="black"/>
+              </TouchableOpacity>
+            );
+          },
+          headerTitle: '', 
+        }}
       />
       <LoginStack.Screen 
-        name="SignupPage"
+        name="SignupPage2"
         options={{
           headerShown: true,
           headerLeft: () => {
@@ -161,7 +180,7 @@ const LoginNav = ({ onLogin }) => {
           headerTitle: '', 
         }}
       >
-        {props => <SignupScreen {...props} onLogin={onLogin} navigation={navigation} />}
+        {props => <SignupScreen2 {...props} onLogin={onLogin} navigation={navigation} />}
       </LoginStack.Screen>
     </LoginStack.Navigator>
   );

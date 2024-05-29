@@ -6,7 +6,7 @@ import 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
 
-export default function LoginScreen({ onLogin }) {
+export default function SignupScreen1() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigation = useNavigation();
@@ -21,26 +21,35 @@ export default function LoginScreen({ onLogin }) {
 
   const handleSubmit = () => {
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // const passwordPattern = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}$/;
 
     if (!emailPattern.test(email)) {
       console.error("Invalid email format");
       return;
     }
 
+    /*
+    if (!passwordPattern.test(password)) {
+      console.error("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
+      return;
+    }
+    */
+
     const userDocRef = doc(db, 'users', email);
     
     getDoc(userDocRef).then((userDoc) => {
-      if (!userDoc.exists()) {
-        console.error("Email not in use");
+      if (userDoc.exists()) {
+        console.error("Email already in use");
       } else {
-        const userData = userDoc.data();
-        if (userData.password !== password) {
-          console.error("Incorrect password");
-          return;
-        } else {
-          onLogin(userData);
-          navigation.navigate('Home', { userData: userData });
-        }
+        setDoc(userDocRef, {
+          email: email,
+          password: password,
+          timestamp: new Date(),
+        }).then(() => {
+          navigation.navigate('SignupPage2', { email: email, password: password });
+        }).catch((error) => {
+          console.error("Error adding email: ", error);
+        });
       }
     }).catch((error) => {
       console.error("Error checking email: ", error);
@@ -58,8 +67,8 @@ export default function LoginScreen({ onLogin }) {
           style={styles.image}
           resizeMode="contain"
           />
-          <Text style={styles.text1}>Hey there!</Text>
-          <Text style={styles.text2}>Please enter your email to continue</Text>
+          <Text style={styles.text1}>Create an account</Text>
+          <Text style={styles.text2}>Enter your email to sign up for Zoollars</Text>
           <TextInput
             style={styles.emailInput}
             placeholder="Enter your email"
@@ -73,19 +82,11 @@ export default function LoginScreen({ onLogin }) {
             onChangeText={handlePasswordChange}
           />
           <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-            <Text style={styles.buttonText}>Login with email</Text>
+            <Text style={styles.buttonText}>Sign up with email</Text>
           </TouchableOpacity>
-
-          <View style={styles.inlineTextContainer}>
-            <Text style={styles.text3}>Don't have an account?</Text>
-            <TouchableOpacity style={styles.button2} onPress={() => navigation.navigate('SignupPage1')}>
-              <Text style={styles.hyperlinkText}>Sign up now</Text>
-            </TouchableOpacity>
-          </View>
-
           <View style={styles.lineContainer}>
             <View style={styles.line} />
-            <Text style={styles.text4}>  or continue with  </Text>
+            <Text style={styles.text3}>  or continue with  </Text>
             <View style={styles.line} />
           </View>
           
@@ -105,12 +106,13 @@ export default function LoginScreen({ onLogin }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
     alignItems: "center",
-    backgroundColor: 'white'
+    backgroundColor: 'white',
+    marginTop: 50,
   },
   container1: {
     flex: 1,
+    backgroundColor: 'white',
   },
   zoollars: {
     fontWeight: 'bold',
@@ -151,29 +153,15 @@ const styles = StyleSheet.create({
     color: "white",
     textAlign: "center",
   },
- 
-  inlineTextContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 20,
-  },
-  text3: { // Dont have an account?
-    color: '#828282'
-  },
-  hyperlinkText: { // Sign up now
-    color: '#008EE2',
-    textDecorationLine: 'underline',
-    marginLeft: 5,
-  },
-  text4: { // or continue with
-    paddingVertical: 20,
-    color: '#828282'
-  },
   lineContainer: {
     width: "80%",
     flexDirection: "row",
     justifyContent: "space-between",
     marginVertical: 10,
+  },
+  text3: { // or continue with
+    paddingVertical: 20,
+    color: '#828282'
   },
   line: {
     height: 1,

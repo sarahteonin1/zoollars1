@@ -4,7 +4,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { doc, setDoc, collection } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
-export default function SignupScreen({ onLogin }) {
+export default function SignupScreen2({ onLogin }) {
     const [name, setName] = useState("");
     const navigation = useNavigation();
     const route = useRoute();
@@ -67,12 +67,13 @@ export default function SignupScreen({ onLogin }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
     alignItems: "center",
-    backgroundColor: 'white'
+    backgroundColor: 'white',
+    marginTop: 120,
   },
   container1: {
     flex: 1,
+    backgroundColor: 'white',
   },
   welcome: {
     fontWeight: 'bold',
