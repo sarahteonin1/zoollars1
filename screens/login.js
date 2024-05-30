@@ -9,6 +9,7 @@ import { db } from '../firebaseConfig';
 export default function LoginScreen({ onLogin }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const navigation = useNavigation();
 
   const handleEmailChange = (text) => {
@@ -23,7 +24,7 @@ export default function LoginScreen({ onLogin }) {
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailPattern.test(email)) {
-      console.error("Invalid email format");
+      setErrorMessage("Invalid email format");
       return;
     }
 
@@ -31,11 +32,11 @@ export default function LoginScreen({ onLogin }) {
     
     getDoc(userDocRef).then((userDoc) => {
       if (!userDoc.exists()) {
-        console.error("Email not in use");
+        setErrorMessage("Email not in use");
       } else {
         const userData = userDoc.data();
         if (userData.password !== password) {
-          console.error("Incorrect password");
+          setErrorMessage("Incorrect password");
           return;
         } else {
           onLogin(userData);
@@ -43,7 +44,7 @@ export default function LoginScreen({ onLogin }) {
         }
       }
     }).catch((error) => {
-      console.error("Error checking email: ", error);
+      setErrorMessage("Error checking email: ", error);
     });
   };
 
@@ -72,6 +73,9 @@ export default function LoginScreen({ onLogin }) {
             value={password}
             onChangeText={handlePasswordChange}
           />
+          <View style={styles.errorContainer}>
+            {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
+          </View>
           <TouchableOpacity style={styles.button} onPress={handleSubmit}>
             <Text style={styles.buttonText}>Login with email</Text>
           </TouchableOpacity>
@@ -197,5 +201,13 @@ const styles = StyleSheet.create({
   image2: { // google logo
     width: 40,
     height: 25
-  }
+  },
+  errorContainer: {
+    width: '80%',
+    marginBottom: 10,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 14,
+  },
 })

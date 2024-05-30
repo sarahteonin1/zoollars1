@@ -9,6 +9,8 @@ import { db } from '../firebaseConfig';
 export default function SignupScreen1() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [passwordError, setPasswordError] = useState(false);
   const navigation = useNavigation();
 
   const handleEmailChange = (text) => {
@@ -21,38 +23,43 @@ export default function SignupScreen1() {
 
   const handleSubmit = () => {
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    // const passwordPattern = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}$/;
+    const passwordPattern = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}$/;
 
     if (!emailPattern.test(email)) {
-      console.error("Invalid email format");
+      setErrorMessage("Invalid email format");
       return;
+    } else {
+      setErrorMessage("");
     }
 
-    /*
-    if (!passwordPattern.test(password)) {
-      console.error("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
-      return;
-    }
-    */
+    
 
     const userDocRef = doc(db, 'users', email);
     
     getDoc(userDocRef).then((userDoc) => {
       if (userDoc.exists()) {
-        console.error("Email already in use");
+        setErrorMessage("Email already in use");
+        setPasswordError(false);
       } else {
-        setDoc(userDocRef, {
-          email: email,
-          password: password,
-          timestamp: new Date(),
-        }).then(() => {
-          navigation.navigate('SignupPage2', { email: email, password: password });
-        }).catch((error) => {
-          console.error("Error adding email: ", error);
-        });
+        setErrorMessage("");
+        if (!passwordPattern.test(password)) {
+          setPasswordError(true);
+          return;
+        } else {
+          setPasswordError(false);
+          setDoc(userDocRef, {
+            email: email,
+            password: password,
+            timestamp: new Date(),
+          }).then(() => {
+            navigation.navigate('SignupPage2', { email: email, password: password });
+          }).catch((error) => {
+            setErrorMessage("Error adding email: " + error.message);
+          });
+        }
       }
     }).catch((error) => {
-      console.error("Error checking email: ", error);
+      setErrorMessage("Error checking email: " + error.message);
     });
   };
 
@@ -81,6 +88,19 @@ export default function SignupScreen1() {
             value={password}
             onChangeText={handlePasswordChange}
           />
+          <View style={styles.errorContainer}>
+            {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
+          </View>
+          {passwordError && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>Password must contain:</Text>
+              <Text style={styles.errorText}>{`\u2022`} at least 8 characters</Text>
+              <Text style={styles.errorText}>{`\u2022`} at least 1 uppercase letter</Text>
+              <Text style={styles.errorText}>{`\u2022`} at least 1 lowercase letter</Text>
+              <Text style={styles.errorText}>{`\u2022`} at least 1 number</Text>
+              <Text style={styles.errorText}>{`\u2022`} at least 1 special character</Text>
+            </View>
+          )}
           <TouchableOpacity style={styles.button} onPress={handleSubmit}>
             <Text style={styles.buttonText}>Sign up with email</Text>
           </TouchableOpacity>
@@ -185,5 +205,13 @@ const styles = StyleSheet.create({
   image2: { // google logo
     width: 40,
     height: 25
-  }
+  },
+  errorContainer: {
+    width: '80%',
+    marginBottom: 10,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 14,
+  },
 })
