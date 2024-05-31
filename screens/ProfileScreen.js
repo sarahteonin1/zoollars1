@@ -1,38 +1,53 @@
+import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { Entypo } from '@expo/vector-icons';
+import EditPfp from './profile edits/EditPfp';
 
 export default function ProfileScreen({ userData, onLogout }) {
   const navigation = useNavigation();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [profilePicture, setProfilePicture] = useState(null);
+
   const handleLogout = () => {
     onLogout();
   };
   
-  const handleEditProfile = () => {
-    navigation.navigate('Edit Profile');
+  const handleEditPfp = () => {
+    setModalVisible(true);
+  };
+
+  const updateProfilePicture = (uri) => {
+    setProfilePicture(uri);
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.photoContainer}>
-      <Image
+        <Image
           style={styles.profilePhoto}
-          source={{uri:'/Users/sarahfaith/Documents/zoollars1/assets/defaultpfp.png'}}
+          source={{ uri: profilePicture || '/Users/sarahfaith/Documents/zoollars1/assets/defaultpfp.png' }}
         />
       </View>
       <View style={styles.profileContainer}>
-        <TouchableOpacity style={styles.button} onPress={handleEditProfile}>
-          <Text style={styles.logout}>Edit Profile</Text>
+        <TouchableOpacity onPress={handleEditPfp}>
+          <Text style={styles.editPfp}>Edit profile picture</Text>
         </TouchableOpacity>
+        <EditPfp
+          modalVisible={modalVisible}
+          setModalVisible={setModalVisible}
+          onProfilePictureChange={updateProfilePicture}
+        />
       </View>
-      <View style={styles.infoContainer}>
-        <Text style={styles.infoText}>Name: </Text>
-        <Text style={styles.userData}>{userData.name}</Text>
-      </View>
-      <View style={styles.infoContainer}>
+      {modalVisible && <EditPfp modalVisible={modalVisible} setModalVisible={setModalVisible} />}
+      <TouchableOpacity style={styles.infoContainer} onPress={handleEditPfp}>
+          <Text style={styles.infoText}>Name: </Text>
+          <Text style={styles.userName}>{userData.name}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.infoContainer}>
         <Text style={styles.infoText}>Email: </Text>
-        <Text style={styles.userData}>{userData.email}</Text>
-      </View>
+        <Text style={styles.userEmail}>{userData.email}</Text>
+      </TouchableOpacity>
       <TouchableOpacity style={styles.zooContainer}>
         <Text style={styles.infoText}>My Zoo</Text>
         <Entypo name="chevron-small-right" size={24} color="black"/>
@@ -59,7 +74,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderColor: '#828282',
-    paddingVertical: 20,
+    paddingVertical: 15,
     paddingTop: 40,
   },
   profilePhoto: {
@@ -68,13 +83,17 @@ const styles = StyleSheet.create({
     borderRadius: 50, 
   },
   profileContainer: {
-    height: 60,
+    height: 50,
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
     borderBottomWidth: 1,
     borderColor: '#E6E6E6',
     paddingBottom: 30,
+  },
+  editPfp: { 
+    color: '#008EE2',
+    justifyContent: 'center',
   },
   infoContainer: {
     flexDirection: 'row',
@@ -101,8 +120,12 @@ const styles = StyleSheet.create({
     paddingLeft: 20,
     fontSize: 15,
   },
-  userData: {
+  userName: {
     paddingLeft: 90,
+    fontSize: 15,
+  },
+  userEmail: {
+    paddingLeft: 93,
     fontSize: 15,
   },
   buttonContainer: {
