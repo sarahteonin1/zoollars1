@@ -11,6 +11,7 @@ import SignupScreen1 from './screens/signup1';
 import SignupScreen2 from './screens/signup2';
 import HomeScreen from './HomeScreen';
 import ProfileScreen from './ProfileScreen';
+import EditProfileScreen from './EditProfileScreen';
 import SpendingScreen from './SpendingScreen';
 import BudgetScreen from './BudgetScreen';
 import GoalsScreen from './GoalsScreen';
@@ -20,7 +21,7 @@ import StoreScreen from './StoreScreen';
 import AddExpenditureScreen from './AddExpenditure';
 
 const Stack = createNativeStackNavigator();
-const Drawer = createDrawerNavigator();
+
 
 const StackNav = ({ userData }) => {
   const navigation = useNavigation();
@@ -30,7 +31,7 @@ const StackNav = ({ userData }) => {
         headerTitleAlign: 'center',
         headerLeft: () => (
           <TouchableOpacity onPress={() => navigation.toggleDrawer()}>
-            <Feather name="menu" size={24} color="black" paddingLeft={10} />
+            <Feather name="menu" size={24} color="black" />
           </TouchableOpacity>
         ),
         headerRight: () => (
@@ -75,11 +76,19 @@ const StackNav = ({ userData }) => {
   );
 }
 
+const Drawer = createDrawerNavigator();
+const CustomHeader = ({ navigation }) => (
+  <TouchableOpacity onPress={() => navigation.toggleDrawer()}>
+    <Feather name="menu" size={24} color="black" style={{ paddingLeft: 20 }} />
+  </TouchableOpacity>
+);
+
 const DrawerNav = ({ onLogout, userData }) => {
   return (
     <Drawer.Navigator 
     initialRouteName="Home"
-    screenOptions={{
+    screenOptions={({ navigation }) => ({
+      headerLeft: () => <CustomHeader navigation={navigation} />,
       headerTintColor: 'black',
       drawerItemStyle: {
         color: 'black',
@@ -87,7 +96,7 @@ const DrawerNav = ({ onLogout, userData }) => {
       drawerType: 'front',
       drawerActiveBackgroundColor: '#F7F7F7',
       drawerActiveTintColor: 'black',
-    }}
+    })}
     >
       <Drawer.Screen 
       name="My Profile"
