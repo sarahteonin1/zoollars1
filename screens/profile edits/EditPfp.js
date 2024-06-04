@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, Modal, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { db } from '../../firebaseConfig';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { uploadToFirebase } from '../../firebaseConfig';
+import { getDownloadURL, getStorage, ref } from 'firebase/storage';
 
-export default function EditPfp({ modalVisible, setModalVisible, onProfilePictureChange }) {
+export default function EditPfp({ modalVisible, setModalVisible, onProfilePictureChange, userData }) {
   const translateY = new Animated.Value(1000); // Initial position outside the screen
 
   useEffect(() => {
@@ -37,10 +41,40 @@ export default function EditPfp({ modalVisible, setModalVisible, onProfilePictur
     }).start();
   };
 
-  const changeProfilePicture = async (source) => {
-    onProfilePictureChange(source);
-    slideDown(); 
+  const updateProfilePictureUrl = async (email, downloadUrl) => {
+    try {
+      const userDocRef = doc(db, 'users', email);
+      await updateDoc(userDocRef, { 
+          profilePictureUrl: downloadUrl
+        });  
+      
+      console.log('Profile picture URL updated successfully!');
+    } catch (error) {
+      console.error('Error updating profile picture URL:', error);
+    }
   };
+
+  const changeProfilePicture = async (uri) => {
+    const fileName = uri.split("/").pop();
+    const uploadResp = await uploadToFirebase(uri, fileName, (v) =>
+      console.log(v)
+    );
+
+    const storage = getStorage();
+    const imageRef = ref(storage, `images/${fileName}`);
+    const imageUrl = await getDownloadURL(imageRef);
+
+    console.log(uploadResp);
+    console.log(fileName);
+    console.log("Download URL:", imageUrl);
+
+    
+    updateProfilePictureUrl(userData.email, imageUrl).then(() => {
+      onProfilePictureChange(imageUrl);
+    });
+    slideDown();
+  };
+  
 
   const choosePicture = async () => {
     let permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -50,15 +84,19 @@ export default function EditPfp({ modalVisible, setModalVisible, onProfilePictur
     }
 
     let pickerResult = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 1,
     });
 
     if (!pickerResult.cancelled) {
-      changeProfilePicture(pickerResult.uri);
+      const { uri } = pickerResult.assets[0];
+      console.log('Selected/captured image URI:', uri);
+      changeProfilePicture(uri);
+    } else {
+      console.log('Image selection/capture was cancelled or URI is missing.');
     }
-    setModalVisible(false);
   };
 
   const takePicture = async () => {
@@ -68,16 +106,17 @@ export default function EditPfp({ modalVisible, setModalVisible, onProfilePictur
       return;
     }
 
-    let pickerResult = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
+      const pickerResult = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        aspect: [1, 1],
+        quality: 1,
+      });
 
-    if (!pickerResult.cancelled) {
-      changeProfilePicture(pickerResult.uri);
-    }
-    setModalVisible(false);
+      if (!pickerResult.cancelled) {
+        const { uri } = pickerResult.assets[0];
+        changeProfilePicture(uri);
+      }
   };
 
   return (
@@ -86,9 +125,6 @@ export default function EditPfp({ modalVisible, setModalVisible, onProfilePictur
         animationType="fade"
         transparent={true}
         visible={modalVisible}
-        onRequestClose={() => {
-          slideDown();
-        }}
       >
         <TouchableOpacity
           style={styles.overlay}

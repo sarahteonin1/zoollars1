@@ -9,7 +9,8 @@ import AddExpenditureScreen from '../screens/AddExpenditureScreen';
 const Stack = createNativeStackNavigator();
 
 export default function HomeNav({ userData }) {
-    const navigation = useNavigation();
+  const navigation = useNavigation();
+
   return (
     <Stack.Navigator
       screenOptions={{
