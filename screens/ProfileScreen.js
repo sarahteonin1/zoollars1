@@ -35,7 +35,7 @@ export default function ProfileScreen({ userData, onLogout }) {
     <View style={styles.container}>
       <View style={styles.photoContainer}>
         <ImageViewer
-          placeholderImageSource={{ uri: '/Users/sarahfaith/Documents/zoollars1/assets/defaultpfp.png' }}
+          placeholderImageSource={{ uri: 'https://firebasestorage.googleapis.com/v0/b/zoollars.appspot.com/o/visuals%2Fdefaultpfp.png?alt=media&token=5fa32e68-1728-4224-9795-2710d371fa1d' }}
           selectedImage={profilePicture || userData.profilePictureUrl}
         />
       </View>

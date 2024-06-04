@@ -44,7 +44,7 @@ export default function SignupScreen2({ onLogin }) {
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.container}>
             <Text style={styles.welcome}>Welcome to Zoollars!</Text>
-            <Image source={{uri: "/Users/sarahfaith/Documents/zoollars1/assets/panda.png"}} 
+            <Image source={{uri: "https://firebasestorage.googleapis.com/v0/b/zoollars.appspot.com/o/visuals%2Fpanda.png?alt=media&token=778d98a1-449b-4f94-bdf4-2d7064e4ebc4"}} 
                 style={styles.image}
                 resizeMode="contain"
               />

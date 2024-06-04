@@ -70,7 +70,7 @@ export default function SignupScreen1() {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.container}>
           <Text style={styles.zoollars}>Zoollars</Text>
-          <Image source={{uri: "/Users/sarahfaith/Documents/zoollars1/assets/zoollarslogo.png"}} 
+          <Image source={{uri: "https://firebasestorage.googleapis.com/v0/b/zoollars.appspot.com/o/visuals%2Fzoollarslogo.png?alt=media&token=cc11f9c7-83d1-479e-9d7f-32a0b4aa2333"}} 
           style={styles.image}
           resizeMode="contain"
           />
@@ -111,7 +111,7 @@ export default function SignupScreen1() {
           </View>
           
           <TouchableOpacity style={styles.googleButton} >
-            <Image source={{uri: "/Users/sarahfaith/Documents/zoollars1/assets/googlelogo2.png"}}
+            <Image source={{uri: "https://firebasestorage.googleapis.com/v0/b/zoollars.appspot.com/o/visuals%2Fgooglelogo2.png?alt=media&token=f382144d-db56-40cd-999a-6a1699d1b460"}}
             style={styles.image2}
             resizeMode="contain"
             />
