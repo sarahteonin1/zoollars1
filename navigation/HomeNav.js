@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { TouchableOpacity } from 'react-native';
 import { Feather, Entypo, Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/HomeScreen';
-import AddExpenditureScreen from '../screens/AddExpenditureScreen';
+import BudgetInputScreen from '../screens/BudgetInputScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -22,7 +22,7 @@ export default function HomeNav({ userData }) {
         ),
         headerRight: () => (
             <TouchableOpacity
-              onPress={() => navigation.navigate('Add Expenditure')}
+              onPress={() => navigation.navigate('Budget Input')}
             >
               <Entypo 
               name="circle-with-plus" 
@@ -41,7 +41,7 @@ export default function HomeNav({ userData }) {
           title: userData ? `Welcome, ${userData.name}!` : 'Welcome!',
         }}
         />
-        <Stack.Screen name="Add Expenditure" component={AddExpenditureScreen} 
+        <Stack.Screen name="Budget Input" component={BudgetInputScreen} 
           options={{
             headerLeft: () => {
               const navigation = useNavigation();

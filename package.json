@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^1.23.1",
+    "@react-native-community/datetimepicker": "^8.1.0",
     "@react-native-firebase/app": "^20.0.0",
     "@react-native-firebase/storage": "^20.0.0",
     "@react-navigation/drawer": "^6.6.15",
@@ -21,7 +22,10 @@
     "firebase": "^10.12.1",
     "react": "18.2.0",
     "react-native": "^0.74.1",
+    "react-native-calculator": "^0.5.2",
+    "react-native-dropdown-picker": "^5.4.6",
     "react-native-gesture-handler": "~2.16.1",
+    "react-native-modal-datetime-picker": "^17.1.0",
     "react-native-reanimated": "^3.10.1"
   },
   "devDependencies": {
