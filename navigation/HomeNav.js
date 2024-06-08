@@ -41,7 +41,8 @@ export default function HomeNav({ userData }) {
           title: userData ? `Welcome, ${userData.name}!` : 'Welcome!',
         }}
         />
-        <Stack.Screen name="Budget Input" component={BudgetInputScreen} 
+        <Stack.Screen 
+          name="Budget Input"
           options={{
             headerLeft: () => {
               const navigation = useNavigation();
@@ -57,7 +58,9 @@ export default function HomeNav({ userData }) {
             headerTitle: '', 
             presentation: 'modal',
           }}
-        />
+        >
+          {props => <BudgetInputScreen {...props} userData={userData} />}
+        </Stack.Screen>
     </Stack.Navigator>
   );
 }
