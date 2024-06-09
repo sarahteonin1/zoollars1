@@ -89,9 +89,9 @@ export default function BudgetInputScreen( { userData } ) {
     console.log('Date:', date);
     console.log('Amount: $', amount);
     console.log('Category:', category);
-    console.log('Description:', description);
+    console.log('Name:', description);
 
-    if (!category || !date || !amount) {
+    if (!description || !category || !date || !amount) {
       alert('Please fill all fields');
       return;
     }
@@ -134,8 +134,17 @@ export default function BudgetInputScreen( { userData } ) {
           </TouchableOpacity>
         </View>
 
+        {/* Description Input */}
+        <Text style={styles.dateLabel}>Name</Text>
+        <TextInput
+          style={styles.descriptionInput}
+          placeholder="Describe your expense"
+          value={description}
+          onChangeText={setDescription}
+        />
+
         {/* Date Picker */}
-        <Text style={styles.dateLabel}>Date</Text>
+        <Text style={styles.amountLabel}>Date</Text>
         <TouchableOpacity onPress={showDatePicker}>
           <View style={styles.dateInput}>
             <Text style={styles.dateText}>{date || 'Select Date'}</Text>
@@ -191,20 +200,13 @@ export default function BudgetInputScreen( { userData } ) {
           onNewCategory={handleNewCategoryAdded} 
         />
 
-        {/* Description Input */}
-        <Text style={styles.amountLabel}>Description (Optional)</Text>
-        <TextInput
-          style={styles.descriptionInput}
-          placeholder="Write a Description"
-          value={description}
-          onChangeText={setDescription}
-        />
-
         {/* Submit Button */}
+        <View style={styles.submitButtonContainer}>
         <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
           <Text style={styles.submitButtonText}>Submit</Text>
         </TouchableOpacity>
-
+        </View>
+        
       </View>
     </TouchableWithoutFeedback>
 
@@ -352,10 +354,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 20,
     alignSelf: 'center',
-    marginTop: 16,
   },
   submitButtonText: {
     color: '#fff',
     fontSize: 15,
+  },
+  submitButtonContainer: {
+    position: 'absolute',
+    bottom: 60,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
   },
 });
