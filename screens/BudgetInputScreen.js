@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Button, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Button, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform, ScrollView } from "react-native";
 import React, { useState, useEffect } from 'react';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import CalculatorModal from "./budget input screens/CalculatorModal";
@@ -117,95 +117,95 @@ export default function BudgetInputScreen( { userData } ) {
   };
 
   return (
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-    <View style={styles.container}>
-      <View style={styles.toggleContainer}>
-        <TouchableOpacity
-          style={[styles.pill, isIncome ? styles.activePill : styles.inactivePill]}
-          onPress={() => setIsIncome(true)}
-        >
-          <Text style={isIncome ? styles.activeText : styles.inactiveText}>Income</Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <View style={styles.toggleContainer}>
+          <TouchableOpacity
+            style={[styles.pill, isIncome ? styles.activePill : styles.inactivePill]}
+            onPress={() => setIsIncome(true)}
+          >
+            <Text style={isIncome ? styles.activeText : styles.inactiveText}>Income</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.pill, !isIncome ? styles.activePill : styles.inactivePill]}
+            onPress={() => setIsIncome(false)}
+          >
+            <Text style={!isIncome ? styles.activeText : styles.inactiveText}>Expenditure</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Date Picker */}
+        <Text style={styles.dateLabel}>Date</Text>
+        <TouchableOpacity onPress={showDatePicker}>
+          <View style={styles.dateInput}>
+            <Text style={styles.dateText}>{date || 'Select Date'}</Text>
+          </View>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.pill, !isIncome ? styles.activePill : styles.inactivePill]}
-          onPress={() => setIsIncome(false)}
-        >
-          <Text style={!isIncome ? styles.activeText : styles.inactiveText}>Expenditure</Text>
+        <DateTimePickerModal
+          isVisible={isDatePickerVisible}
+          mode="date"
+          onConfirm={handleConfirm}
+          onCancel={hideDatePicker}
+        />
+
+        {/* Amount Input */}
+        <Text style={styles.amountLabel}>Amount</Text>
+        <TouchableOpacity onPress={showCalculator}>
+          <View style={styles.amountInput}>
+            <Text style={styles.amountText}>{amount || 'Enter Amount'}</Text>
+          </View>
         </TouchableOpacity>
+        <CalculatorModal
+          isVisible={isCalculatorVisible}
+          onClose={hideCalculator}
+          onCalculate={(value) => handleAmountChange(value)}
+        />
+
+        {/* Category Dropdown */}
+        <Text style={styles.amountLabel}>Category</Text>
+        <DropDownPicker
+          open={open}
+          value={category}
+          items={categories}
+          setOpen={setOpen}
+          setValue={setCategory}
+          setItems={setCategories}
+          placeholder="Select Category"
+          style={styles.dropdown}
+          textStyle={styles.dropdownText}
+          containerStyle={styles.dropdownContainer}
+          dropDownContainerStyle={styles.dropdownDropdown}
+        />
+        <TouchableOpacity 
+          style={styles.addCategoryButton}
+          onPress={() => setModalVisible(true)}
+        >
+          <Text style={styles.addCategoryButtonText}>+ Add Category</Text>
+        </TouchableOpacity>
+
+        {/* Modal for adding category */}
+        <CategoryInput 
+          modalVisible={modalVisible} 
+          setModalVisible={setModalVisible} 
+          userData={userData} 
+          onNewCategory={handleNewCategoryAdded} 
+        />
+
+        {/* Description Input */}
+        <Text style={styles.amountLabel}>Description (Optional)</Text>
+        <TextInput
+          style={styles.descriptionInput}
+          placeholder="Write a Description"
+          value={description}
+          onChangeText={setDescription}
+        />
+
+        {/* Submit Button */}
+        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+          <Text style={styles.submitButtonText}>Submit</Text>
+        </TouchableOpacity>
+
       </View>
-
-      {/* Date Picker */}
-      <Text style={styles.dateLabel}>Date</Text>
-      <TouchableOpacity onPress={showDatePicker}>
-        <View style={styles.dateInput}>
-          <Text style={styles.dateText}>{date || 'Select Date'}</Text>
-        </View>
-      </TouchableOpacity>
-      <DateTimePickerModal
-        isVisible={isDatePickerVisible}
-        mode="date"
-        onConfirm={handleConfirm}
-        onCancel={hideDatePicker}
-      />
-
-      {/* Amount Input */}
-      <Text style={styles.amountLabel}>Amount</Text>
-      <TouchableOpacity onPress={showCalculator}>
-        <View style={styles.amountInput}>
-          <Text style={styles.amountText}>{amount || 'Enter Amount'}</Text>
-        </View>
-      </TouchableOpacity>
-      <CalculatorModal
-        isVisible={isCalculatorVisible}
-        onClose={hideCalculator}
-        onCalculate={(value) => handleAmountChange(value)}
-      />
-
-      {/* Category Dropdown */}
-      <Text style={styles.amountLabel}>Category</Text>
-      <DropDownPicker
-        open={open}
-        value={category}
-        items={categories}
-        setOpen={setOpen}
-        setValue={setCategory}
-        setItems={setCategories}
-        placeholder="Select Category"
-        style={styles.dropdown}
-        textStyle={styles.dropdownText}
-        containerStyle={styles.dropdownContainer}
-        dropDownContainerStyle={styles.dropdownDropdown}
-      />
-      <TouchableOpacity 
-        style={styles.addCategoryButton}
-        onPress={() => setModalVisible(true)}
-      >
-        <Text style={styles.addCategoryButtonText}>+ Add Category</Text>
-      </TouchableOpacity>
-
-      {/* Modal for adding category */}
-      <CategoryInput 
-        modalVisible={modalVisible} 
-        setModalVisible={setModalVisible} 
-        userData={userData} 
-        onNewCategory={handleNewCategoryAdded} 
-      />
-
-      {/* Description Input */}
-      <Text style={styles.amountLabel}>Description (Optional)</Text>
-      <TextInput
-        style={styles.descriptionInput}
-        placeholder="Write a Description"
-        value={description}
-        onChangeText={setDescription}
-      />
-
-      {/* Submit Button */}
-      <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-        <Text style={styles.submitButtonText}>Submit</Text>
-      </TouchableOpacity>
-
-    </View>
     </TouchableWithoutFeedback>
 
   );
