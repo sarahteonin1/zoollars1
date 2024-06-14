@@ -1,14 +1,117 @@
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from "react-native";
-import React, { useState } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, Button, ScrollView } from "react-native";
+import { Picker } from '@react-native-picker/picker';
+import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { collection, getDocs, query, where, doc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import MonthPicker from "./spendings screens/monthpicker";
+import YearPicker from "./spendings screens/yearpicker";
 
-export default function SpendingScreen() {
+const fetchExpensesForMonth = async (userDocRef, year, month) => {
+  const expensesRef = collection(db, `users/${userDocRef.id}/expenses`);
+  const q = query(expensesRef, where("month", "==", month), where("year", "==", year));
+
+  const querySnapshot = await getDocs(q);
+
+  const expenses = [];
+  querySnapshot.forEach((doc) => {
+    expenses.push(doc.data());
+  })
+  return expenses;
+};
+
+const formatExpenses = (expenses) => {
+  const formattedData = {};
+
+  expenses.forEach((expense) => {
+    const date = new Date(expense.date).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short'
+    });
+    if (!formattedData[date]) {
+      formattedData[date] = { date, entries: [] };
+    }
+    formattedData[date].entries.push({
+      category: expense.category,
+      name: expense.description,
+      amount: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(expense.amount),
+      type: expense.type.toLowerCase(),
+    });
+  });
+
+  return Object.values(formattedData);
+};
+
+const calculateTotals = (expenses) => {
+  let totalIncome = 0;
+  let totalExpenditure = 0;
+
+  expenses.forEach((expense) => {
+    const amount = parseFloat(expense.amount);
+    if (expense.type === 'Income') {
+      totalIncome += amount;
+    } else if (expense.type === 'Expenditure'){
+      totalExpenditure += amount;
+    }
+  });
+
+  const netTotal = totalIncome - totalExpenditure;
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+  };
+
+  return { 
+    totalIncome: formatCurrency(totalIncome), 
+    totalExpenditure: formatCurrency(totalExpenditure), 
+    netTotal: formatCurrency(netTotal) 
+  };
+};
+
+export default function SpendingScreen({ userData }) {
   const [activePill, setActivePill] = useState('total');
-  const [data, setData] = useState([
-    { date: '01 May', entries: [{ category: 'Food', name: 'Pasta Express', amount: '$5.00', type: 'expenditure' }, { category: 'Transport', name: 'Grab', amount: '$20.00', type: 'expenditure' }, { category: 'Allowance', name: 'Weekly', amount: '$300.00', type: 'income' }] },
-    { date: '02 May', entries: [{ category: 'Food', name: 'Ban Mian', amount: '$5.00', type: 'expenditure' }, { category: 'Household', name: 'Groceries', amount: '$80.00', type: 'expenditure' }] },
-  ]);
+  const [data, setData] = useState([]);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [monthPickerVisible, setMonthPickerVisible] = useState(false);
+  const [yearPickerVisible, setYearPickerVisible] = useState(false);
+  const [totals, setTotals] = useState({ totalIncome: 0, totalExpenditure: 0, netTotal: 0 });
+
+  const handlePreviousMonth = () => {
+    setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth() - 1)));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth() + 1)));
+  };
+
+  const handleMonthPress = () => {
+    setMonthPickerVisible(true);
+  };
+
+  const handleYearPress = () => {
+    setYearPickerVisible(true);
+  };
+
+  const handleMonthChange = (itemValue) => {
+    const newDate = new Date(currentMonth);
+    newDate.setMonth(itemValue);
+    setCurrentMonth(newDate);
+    setMonthPickerVisible(false);
+  };
+
+  const handleYearChange = (itemValue) => {
+    const newDate = new Date(currentMonth);
+    newDate.setFullYear(itemValue);
+    setCurrentMonth(newDate);
+    setYearPickerVisible(false);
+  };
+
+  const handleIncomePress = () => {
+    setActivePill('income');
+  };
+
+  const handleExpenditurePress = () => {
+    setActivePill('expenditure');
+  };
 
   const renderItem = ({ item }) => (
     <View>
@@ -32,68 +135,143 @@ export default function SpendingScreen() {
       ))}
       <View style={styles.totalContainer}>
         <Text style={styles.totalLabel}>Total</Text>
-        <Text style={styles.totalAmount}>${item.entries.reduce((acc, entry) => entry.type === 'income' ? acc + parseFloat(entry.amount.slice(1)) : acc - parseFloat(entry.amount.slice(1)), 0).toFixed(2)}</Text>
+        <Text style={[styles.totalAmount,
+        item.entries.reduce((acc, entry) => entry.type === 'income' ? acc + parseFloat(entry.amount.slice(1)) : acc - parseFloat(entry.amount.slice(1)), 0) >= 0 ? styles.income : styles.expenditure
+      ]}>
+        ${Math.abs(item.entries.reduce((acc, entry) => entry.type === 'income' ? acc + parseFloat(entry.amount.slice(1)) : acc - parseFloat(entry.amount.slice(1)), 0)).toFixed(2)}
+      </Text>
       </View>
     </View>
   );
-
-  const totals = {
-    income: 300, // Example amount, replace with actual data
-    expenditure: 110, // Example amount, replace with actual data
-    total: 190 // Example amount, replace with actual data
-  };
   
-    return (
-      <View style={styles.container}>
-      <View style={styles.toggleContainer}>
-        <View style={styles.pillContainer}>
-        <TouchableOpacity
-          style={[styles.pill, activePill === 'income' ? styles.activePill : styles.inactivePill]}
-          onPress={() => setActivePill('income')}
-        >
-          <Text style={activePill === 'income' ? styles.activeText : styles.inactiveText}>Income</Text>
-        </TouchableOpacity>
-        <Text style={styles.incomeText}>${totals.income}</Text>
-        </View>
+  useEffect(() => {
+    const fetchAndCalculateTotals = async () => {
+      try {
+        const userDocRef = doc(db, 'users', userData.email);
+        const year = currentMonth.getFullYear();
+        const month = currentMonth.getMonth() + 1; // January is 0 in JavaScript Date object
 
-        <View style={styles.pillContainer}>
-        <TouchableOpacity
-          style={[styles.pill, activePill === 'expenditure' ? styles.activePill : styles.inactivePill]}
-          onPress={() => setActivePill('expenditure')}
-        >
-          <Text style={activePill === 'expenditure' ? styles.activeText : styles.inactiveText}>Expenditure</Text>
-        </TouchableOpacity>
-        <Text style={styles.expenditureText}>${totals.expenditure}</Text>
-        </View>
+        const expenses = await fetchExpensesForMonth(userDocRef, year, month);
+        const formattedExpenses = formatExpenses(expenses);
+        setData(formattedExpenses);
 
-        <View style={styles.pillContainer}>
-        <TouchableOpacity
-          style={[styles.pill, activePill === 'total' ? styles.activePill : styles.inactivePill]}
-          onPress={() => setActivePill('total')}
-        >
-          <Text style={activePill === 'total' ? styles.activeText : styles.inactiveText}>Total</Text>
-        </TouchableOpacity>
-        <Text style={styles.totalText}>${totals.total}</Text>
-        </View>
+        const calculatedTotals = calculateTotals(expenses);
+        setTotals(calculatedTotals);
+      } catch (error) {
+        console.error('Error fetching expenses:', error);
+      }
+    };
+
+    fetchAndCalculateTotals();
+  }, [userData.email, currentMonth]);
+
+  return (
+    <View style={styles.container}>
+
+      {/* Header */}
+      <View style={styles.header}>
+      <TouchableOpacity onPress={handlePreviousMonth}>
+        <Ionicons name="chevron-back-outline" size={24} color="black"/>
+      </TouchableOpacity>
+      
+      <TouchableOpacity onPress={handleMonthPress}>
+        <Text style={styles.headerTitle}>
+          {currentMonth.toLocaleString('default', { month: 'long' })}
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={handleYearPress}>
+        <Text style={styles.headerTitle}>
+          {currentMonth.getFullYear()}
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={handleNextMonth}>
+        <Ionicons name="chevron-forward-outline" size={24} color="black"/>
+      </TouchableOpacity>
+    </View>
+
+    {/* Toggle buttons */}
+    <View style={styles.toggleContainer}>
+      <View style={styles.pillContainer}>
+      <TouchableOpacity
+        style={[styles.pill, activePill === 'income' ? styles.activePill : styles.inactivePill]}
+        onPress={() => handleIncomePress()}
+      >
+        <Text style={activePill === 'income' ? styles.activeText : styles.inactiveText}>Income</Text>
+      </TouchableOpacity>
+      <Text style={styles.incomeText}>{totals.totalIncome}</Text>
       </View>
 
+      <View style={styles.pillContainer}>
+      <TouchableOpacity
+        style={[styles.pill, activePill === 'expenditure' ? styles.activePill : styles.inactivePill]}
+        onPress={() => handleExpenditurePress()}
+      >
+        <Text style={activePill === 'expenditure' ? styles.activeText : styles.inactiveText}>Expenditure</Text>
+      </TouchableOpacity>
+      <Text style={styles.expenditureText}>{totals.totalExpenditure}</Text>
+      </View>
+
+      <View style={styles.pillContainer}>
+      <TouchableOpacity
+        style={[styles.pill, activePill === 'total' ? styles.activePill : styles.inactivePill]}
+        onPress={() => setActivePill('total')}
+      >
+        <Text style={activePill === 'total' ? styles.activeText : styles.inactiveText}>Total</Text>
+      </TouchableOpacity>
+      <Text style={styles.totalText}>{totals.netTotal}</Text>
+      </View>
+    </View>
+
+    {/* List of entries */}
+    <ScrollView>
       <FlatList
       data={data}
       renderItem={renderItem}
       keyExtractor={(item, index) => index.toString()}
       contentContainerStyle={styles.container}
       />
+    </ScrollView>
 
-    </View>
-    );
-  
-  }
+    {/* Month Picker */}
+      <MonthPicker
+      visible={monthPickerVisible}
+      selectedMonth={currentMonth.getMonth()}
+      onMonthChange={handleMonthChange}
+      onClose={() => setMonthPickerVisible(false)}
+    />
+
+    {/* Year Picker */}
+    <YearPicker
+      visible={yearPickerVisible}
+      selectedYear={currentMonth.getFullYear()}
+      onYearChange={handleYearChange}
+      onClose={() => setYearPickerVisible(false)}
+    />
+  </View>
+  );
+}
   
   const styles = StyleSheet.create({
     container: {
       flex: 1,
       padding: 16,
       backgroundColor: '#fff',
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingBottom: 16,
+    },
+    headerButton: {
+      fontSize: 18,
+      fontWeight: 'bold',
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginLeft: 6,
+      marginRight: 6,
     },
     toggleContainer: {
       flexDirection: 'row',

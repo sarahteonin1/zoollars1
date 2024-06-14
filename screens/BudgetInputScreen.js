@@ -97,11 +97,19 @@ export default function BudgetInputScreen( { userData } ) {
     }
 
     const userDocRef = doc(db, 'users', userData.email);
-    const expenseId = `${date}_${new Date().getTime()}_${isIncome ? 'Income' : 'Expenditure'}`;
+    const formattedDate = new Date(date).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+    const expenseId = `${formattedDate}_${new Date().getTime()}_${isIncome ? 'Income' : 'Expenditure'}`;
     const expense = {
       type: isIncome ? 'Income' : 'Expenditure',
       category,
+      formattedDate: formattedDate,
       date,
+      month: new Date(date).getMonth() + 1,
+      year: new Date(date).getFullYear(),
       amount,
       description,
       date_added: new Date(),

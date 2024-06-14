@@ -47,12 +47,13 @@ export default function DrawerNav({ onLogout, userData }) {
         {props => <HomeNav {...props} userData={userData} />}
       </Drawer.Screen>
       <Drawer.Screen 
-        name="Spendings Overview" 
-        component={SpendingScreen}
+        name="Spendings Overview"
         options={{
           drawerIcon: ({ color }) => <FontAwesome5 name="money-bill-alt" size={20} color="black" paddingLeft={10} />,
         }}
-      />
+      >
+        {props => <SpendingScreen {...props} userData={userData} />}
+      </Drawer.Screen>
       <Drawer.Screen 
         name="  Budget Overview" 
         component={BudgetScreen}
