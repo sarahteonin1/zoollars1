@@ -35,12 +35,13 @@ export default function HomeNav({ userData }) {
         }}
       >
         <Stack.Screen 
-        name="Home Screen" 
-        component={HomeScreen}
+        name="Home Screen"
         options={{
           title: userData ? `Welcome, ${userData.name}!` : 'Welcome!',
         }}
-        />
+        >
+          {props => <HomeScreen {...props} userData={userData} />}
+        </Stack.Screen>
         <Stack.Screen 
           name="Budget Input"
           options={{
