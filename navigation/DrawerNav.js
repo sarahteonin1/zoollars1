@@ -5,7 +5,8 @@ import { Feather, FontAwesome6, FontAwesome5, FontAwesome, MaterialIcons, Ionico
 import ProfileScreen from '../screens/ProfileScreen';
 import SpendingScreen from '../screens/SpendingScreen';
 import BudgetScreen from '../screens/BudgetScreen';
-import GoalsScreen from '../screens/GoalsScreen';
+import GoalsScreen from '../screens/Goal setting screens/GoalsScreen';
+import GoalInputScreen from '../screens/Goal setting screens/GoalInputScreen';
 import ChallengesScreen from '../screens/ChallengesScreen';
 import StoreScreen from '../screens/StoreScreen';
 import FriendsScreen from '../screens/FriendsScreen';
@@ -54,7 +55,7 @@ export default function DrawerNav({ onLogout, userData }) {
         }}
       />
       <Drawer.Screen 
-        name="  Budget Overview" 
+        name=" Budget Overview" 
         component={BudgetScreen}
         options={{
           drawerIcon: ({ color }) => <FontAwesome name="dollar" size={22} color="black" paddingLeft={16} />,
@@ -67,6 +68,7 @@ export default function DrawerNav({ onLogout, userData }) {
           drawerIcon: ({ color }) => <FontAwesome5 name="flag" size={22} color="black" paddingLeft={13} />,
         }}
       />
+      
       <Drawer.Screen 
         name="Challenges" 
         component={ChallengesScreen}
