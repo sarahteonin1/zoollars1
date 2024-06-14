@@ -215,12 +215,9 @@ export default function SpendingScreen({ userData }) {
         <Ionicons name="chevron-back-outline" size={24} color="black"/>
       </TouchableOpacity>
       
-      
         <Text style={styles.headerTitle}>
           {currentMonth.toLocaleString('default', { month: 'long' })}
         </Text>
-      
-      
         <Text style={styles.headerTitle}>
           {currentMonth.getFullYear()}
         </Text>
