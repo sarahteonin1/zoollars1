@@ -1,11 +1,11 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Button, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform } from "react-native";
 import React, { useState, useEffect } from 'react';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import CalculatorModal from "./budget input screens/CalculatorModal";
 import CategoryInput from "./budget input screens/CategoryInput";
 import DropDownPicker from 'react-native-dropdown-picker';
 import { db } from '../firebaseConfig';
-import { doc, setDoc, addDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, setDoc, collection, getDocs } from 'firebase/firestore';
 import 'firebase/firestore';
 
 export default function BudgetInputScreen( { userData } ) {
@@ -104,6 +104,7 @@ export default function BudgetInputScreen( { userData } ) {
     });
     const expenseId = `${formattedDate}_${new Date().getTime()}_${isIncome ? 'Income' : 'Expenditure'}`;
     const expense = {
+      id: expenseId,
       type: isIncome ? 'Income' : 'Expenditure',
       category,
       formattedDate: formattedDate,

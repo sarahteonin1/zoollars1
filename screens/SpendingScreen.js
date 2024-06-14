@@ -1,11 +1,9 @@
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, Button, ScrollView } from "react-native";
-import { Picker } from '@react-native-picker/picker';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, ScrollView } from "react-native";
 import React, { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { collection, getDocs, query, where, doc } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import MonthPicker from "./spendings screens/monthpicker";
-import YearPicker from "./spendings screens/yearpicker";
+import { Swipeable } from 'react-native-gesture-handler';
 
 const fetchExpensesForMonth = async (userDocRef, year, month) => {
   const expensesRef = collection(db, `users/${userDocRef.id}/expenses`);
@@ -32,6 +30,7 @@ const formatExpenses = (expenses) => {
       formattedData[date] = { date, entries: [] };
     }
     formattedData[date].entries.push({
+      id: expense.id,
       category: expense.category,
       name: expense.description,
       amount: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(expense.amount),
@@ -71,8 +70,6 @@ export default function SpendingScreen({ userData }) {
   const [activePill, setActivePill] = useState('total');
   const [data, setData] = useState([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [monthPickerVisible, setMonthPickerVisible] = useState(false);
-  const [yearPickerVisible, setYearPickerVisible] = useState(false);
   const [totals, setTotals] = useState({ totalIncome: 0, totalExpenditure: 0, netTotal: 0 });
 
   const handlePreviousMonth = () => {
@@ -81,14 +78,6 @@ export default function SpendingScreen({ userData }) {
 
   const handleNextMonth = () => {
     setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth() + 1)));
-  };
-
-  const handleMonthPress = () => {
-    setMonthPickerVisible(true);
-  };
-
-  const handleYearPress = () => {
-    setYearPickerVisible(true);
   };
 
   const handleMonthChange = (itemValue) => {
@@ -113,37 +102,89 @@ export default function SpendingScreen({ userData }) {
     setActivePill('expenditure');
   };
 
-  const renderItem = ({ item }) => (
-    <View>
-      <Text style={styles.date}>{item.date}</Text>
-      <View style={styles.line} />
-      {item.entries.map((entry, index) => (
-        <View key={index}>
-          <View style={styles.entry}>
-            <View style={styles.categoryContainer}>
-              <Text style={styles.category}>{entry.category}</Text>
-            </View>
-            <View style={styles.nameContainer}>
-              <Text style={styles.name}>{entry.name}</Text>
-            </View>
-            <View style={styles.amountContainer}>
-              <Text style={[styles.amount, entry.type === 'income' ? styles.income : styles.expenditure]}>{entry.amount}</Text>
-            </View>
-          </View>
-          <View style={styles.line} />
-        </View>
-      ))}
-      <View style={styles.totalContainer}>
-        <Text style={styles.totalLabel}>Total</Text>
-        <Text style={[styles.totalAmount,
-        item.entries.reduce((acc, entry) => entry.type === 'income' ? acc + parseFloat(entry.amount.slice(1)) : acc - parseFloat(entry.amount.slice(1)), 0) >= 0 ? styles.income : styles.expenditure
-      ]}>
-        ${Math.abs(item.entries.reduce((acc, entry) => entry.type === 'income' ? acc + parseFloat(entry.amount.slice(1)) : acc - parseFloat(entry.amount.slice(1)), 0)).toFixed(2)}
-      </Text>
-      </View>
-    </View>
-  );
+  const renderItem = ({ item }) => {
+    // Filter entries based on the active pill
+    const filteredEntries = item.entries.filter(entry => activePill === 'total' || entry.type === activePill);
   
+    // If no entries match the active pill, don't render this date
+    if (filteredEntries.length === 0) {
+      return null;
+    }
+  
+    // Calculate the total for the current date's entries
+    const totalForDate = filteredEntries.reduce((acc, entry) => {
+      return entry.type === 'income' ? acc + parseFloat(entry.amount.slice(1)) : acc - parseFloat(entry.amount.slice(1));
+    }, 0);
+  
+    const renderRightActions = (entry) => (
+      <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteEntry(entry)}>
+        <Text style={styles.deleteButtonText}>Delete</Text>
+      </TouchableOpacity>
+    );
+  
+    return (
+      <View>
+        <Text style={styles.date}>{item.date}</Text>
+        <View style={styles.line} />
+        {filteredEntries.map((entry, index) => (
+          <Swipeable
+            key={index}
+            renderRightActions={() => renderRightActions(entry, handleDeleteEntry)}
+          >
+            <View style={styles.entry}>
+              <View style={styles.categoryContainer}>
+                <Text style={styles.category}>{entry.category}</Text>
+              </View>
+              <View style={styles.nameContainer}>
+                <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">{entry.name}</Text>
+              </View>
+              <View style={styles.amountContainer}>
+                <Text style={[
+                  styles.amount,
+                  entry.type === 'income' ? styles.income : styles.expenditure
+                ]}>
+                  {parseFloat(entry.amount) >= 0 ? '+' : ''}{entry.amount.replace('-', '')}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.line} />
+          </Swipeable>
+        ))}
+        <View style={styles.totalContainer}>
+          <Text style={styles.totalLabel}>Total</Text>
+          <Text style={[
+            styles.totalAmount,
+            totalForDate >= 0 ? styles.income : styles.expenditure
+          ]}>
+            ${Math.abs(totalForDate).toFixed(2)}
+          </Text>
+        </View>
+      </View>
+    );
+  };
+  
+  const handleDeleteEntry = async (entryToDelete) => {
+    try {
+      const updatedData = data.map(item => {
+        const filteredEntries = item.entries.filter(entry => entry !== entryToDelete);
+        return { ...item, entries: filteredEntries };
+      }).filter(item => item.entries.length > 0);
+  
+      setData(updatedData);
+  
+      await deleteEntryFromDatabase(entryToDelete);
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+    }
+  };
+  
+  const deleteEntryFromDatabase = async (entryToDelete) => {
+    console.log(entryToDelete);
+    console.log(entryToDelete.id);
+    const userDocRef = doc(db, 'users', userData.email, 'expenses', entryToDelete.id);
+    await deleteDoc(userDocRef);
+  };
+
   useEffect(() => {
     const fetchAndCalculateTotals = async () => {
       try {
@@ -174,16 +215,16 @@ export default function SpendingScreen({ userData }) {
         <Ionicons name="chevron-back-outline" size={24} color="black"/>
       </TouchableOpacity>
       
-      <TouchableOpacity onPress={handleMonthPress}>
+      
         <Text style={styles.headerTitle}>
           {currentMonth.toLocaleString('default', { month: 'long' })}
         </Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={handleYearPress}>
+      
+      
         <Text style={styles.headerTitle}>
           {currentMonth.getFullYear()}
         </Text>
-      </TouchableOpacity>
+      
       <TouchableOpacity onPress={handleNextMonth}>
         <Ionicons name="chevron-forward-outline" size={24} color="black"/>
       </TouchableOpacity>
@@ -232,21 +273,6 @@ export default function SpendingScreen({ userData }) {
       />
     </ScrollView>
 
-    {/* Month Picker */}
-      <MonthPicker
-      visible={monthPickerVisible}
-      selectedMonth={currentMonth.getMonth()}
-      onMonthChange={handleMonthChange}
-      onClose={() => setMonthPickerVisible(false)}
-    />
-
-    {/* Year Picker */}
-    <YearPicker
-      visible={yearPickerVisible}
-      selectedYear={currentMonth.getFullYear()}
-      onYearChange={handleYearChange}
-      onClose={() => setYearPickerVisible(false)}
-    />
   </View>
   );
 }
@@ -326,15 +352,17 @@ export default function SpendingScreen({ userData }) {
       paddingTop: 10,
     },
     categoryContainer: {
-      width: 100,
-      padding:0,
+      flex: 2,
+      paddingVertical: 10,
     },
     nameContainer: {
-      width: 180,
+      flex: 4,
+      paddingVertical: 10,
     },
     amountContainer: {
+      flex: 2,
       alignItems: 'flex-end',
-      width: 85,
+      paddingVertical: 10,
     },
     date: {
       fontSize: 18,
@@ -344,11 +372,12 @@ export default function SpendingScreen({ userData }) {
     line: {
       height: 1,
       backgroundColor: '#ccc',
-      marginVertical: 8,
     },
     entry: {
       flexDirection: 'row',
       paddingVertical: 8,
+      alignContent: 'space-between',
+      alignItems: 'center',
     },
     category: {
       fontSize: 16,
@@ -358,6 +387,9 @@ export default function SpendingScreen({ userData }) {
     },
     amount: {
       fontSize: 16,
+      maxWidth: '100%', 
+      numberOfLines: 1,
+      ellipsizeMode: 'tail',
     },
     income: {
       color: 'green',
@@ -378,6 +410,17 @@ export default function SpendingScreen({ userData }) {
       fontSize: 16,
       fontWeight: 'bold',
       color: 'blue',
+    },
+    deleteButton: {
+      backgroundColor: 'red',
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: 75,
+      height: '100%',
+    },
+    deleteButtonText: {
+      color: '#fff',
+      fontWeight: 'bold',
     },
   });
   
