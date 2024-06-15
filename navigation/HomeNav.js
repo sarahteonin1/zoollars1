@@ -5,6 +5,8 @@ import { TouchableOpacity } from 'react-native';
 import { Feather, Entypo, Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/HomeScreen';
 import BudgetInputScreen from '../screens/BudgetInputScreen';
+import GoalsScreen from '../screens/Goal setting screens/GoalsScreen';
+import GoalInputScreen from '../screens/Goal setting screens/GoalInputScreen';
 
 const Stack = createNativeStackNavigator();
 
