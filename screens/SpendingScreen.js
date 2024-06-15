@@ -80,20 +80,6 @@ export default function SpendingScreen({ userData }) {
     setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth() + 1)));
   };
 
-  const handleMonthChange = (itemValue) => {
-    const newDate = new Date(currentMonth);
-    newDate.setMonth(itemValue);
-    setCurrentMonth(newDate);
-    setMonthPickerVisible(false);
-  };
-
-  const handleYearChange = (itemValue) => {
-    const newDate = new Date(currentMonth);
-    newDate.setFullYear(itemValue);
-    setCurrentMonth(newDate);
-    setYearPickerVisible(false);
-  };
-
   const handleIncomePress = () => {
     setActivePill('income');
   };

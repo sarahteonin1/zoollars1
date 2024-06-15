@@ -119,6 +119,10 @@ export default function BudgetInputScreen( { userData } ) {
     try {
       const expensesCollectionRef = collection(userDocRef, 'expenses');
       await setDoc(doc(expensesCollectionRef, expenseId), expense);
+      setCategory(null);
+      setDescription('');
+      setAmount('');
+      setDate('');
       console.log('Expense added successfully');
     } catch (error) {
       console.error('Error adding expense: ', error);
