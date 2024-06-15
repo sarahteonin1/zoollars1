@@ -73,7 +73,6 @@ export default function HomeScreen({ userData }) {
       <View style={styles.card}>
         <Text style={styles.chartTitle}>Today's Spendings</Text>
         
-        <View style={styles.chartContainer}>
           <BarChart 
           key={JSON.stringify(chartData)}
           data = {chartData}
@@ -92,7 +91,6 @@ export default function HomeScreen({ userData }) {
             <Text style={{ color: '#000', fontWeight: 'bold', paddingBottom: 2, }}>{value.toFixed(2)}</Text>
           )}
           />
-        </View>
       </View>
     </ScrollView>
   );
@@ -136,10 +134,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginBottom: 15,
     fontWeight: 'bold',
-  },
-  chartContainer: {
-    alignItems: 'center',
-    width: '100%',
   },
   label: {
     color: '#000',

@@ -1,9 +1,11 @@
 import React , { useState, useEffect } from 'react';
 import { doc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { BarChart } from "react-native-gifted-charts";
 import Zoo from './Zoo';
+
+const windowWidth = Dimensions.get('window').width;
 
 export default function BudgetScreen({ userData }) {
   const [activePill, setActivePill] = useState('daily');
@@ -64,71 +66,69 @@ export default function BudgetScreen({ userData }) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-
+    <View style={styles.container}>
       {/* Toggle buttons */}
-    <View style={styles.toggleContainer}>
-      <View style={styles.pillContainer}>
-      <TouchableOpacity
-        style={[styles.pill, activePill === 'daily' ? styles.activePill : styles.inactivePill]}
-        onPress={() => setActivePill('daily')}
-      >
-        <Text style={activePill === 'daily' ? styles.activeText : styles.inactiveText}>Daily</Text>
-      </TouchableOpacity>
+      <View style={styles.toggleContainer}>
+        <View style={styles.pillContainer}>
+          <TouchableOpacity
+            style={[styles.pill, activePill === 'daily' ? styles.activePill : styles.inactivePill]}
+            onPress={() => setActivePill('daily')}
+          >
+            <Text style={activePill === 'daily' ? styles.activeText : styles.inactiveText}>Daily</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.pillContainer}>
+          <TouchableOpacity
+            style={[styles.pill, activePill === 'weekly' ? styles.activePill : styles.inactivePill]}
+            onPress={handleWeeklyPress}
+          >
+            <Text style={activePill === 'weekly' ? styles.activeText : styles.inactiveText}>Weekly</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.pillContainer}>
+          <TouchableOpacity
+            style={[styles.pill, activePill === 'monthly' ? styles.activePill : styles.inactivePill]}
+            onPress={handleMonthlyPress}
+          >
+            <Text style={activePill === 'monthly' ? styles.activeText : styles.inactiveText}>Monthly</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <View style={styles.pillContainer}>
-      <TouchableOpacity
-        style={[styles.pill, activePill === 'weekly' ? styles.activePill : styles.inactivePill]}
-        onPress={() => handleWeeklyPress()}
-      >
-        <Text style={activePill === 'weekly' ? styles.activeText : styles.inactiveText}>Weekly</Text>
-      </TouchableOpacity>
-      </View>
-
-      <View style={styles.pillContainer}>
-      <TouchableOpacity
-        style={[styles.pill, activePill === 'monthly' ? styles.activePill : styles.inactivePill]}
-        onPress={() => handleMonthlyPress()}
-      >
-        <Text style={activePill === 'monthly' ? styles.activeText : styles.inactiveText}>Monthly</Text>
-      </TouchableOpacity>
-      </View>
-    </View>
-
+      <ScrollView contentContainerStyle={styles.chartContainer}>
       {/* Zoo Section */}
       <Zoo />
 
-      {/* Chart Section */}
-      <View style={styles.card}>
-        <Text style={styles.chartTitle}>Today's Spendings</Text>
-        
-        
-        <View style={styles.chartContainer}>
+      {/* Scrollable Chart Section */}
+      
+        <View style={styles.card}>
+          <Text style={styles.chartTitle}>Today's Spendings</Text>
           <BarChart 
-          key={JSON.stringify(chartData)}
-          data = {chartData}
-          frontColor={'#6E9277'}
-          barWidth={50}
-          spacing={70}
-          barBorderTopLeftRadius={4}
-          barBorderTopRightRadius={4}
-          xAxisLength={310}
-          rulesLength={310}
-          xAxisLabelTextStyle={styles.label}
-          showFractionalValues={false}
-          initialSpacing={10}
-          noOfSections={4} // Adjust as needed
-          renderTooltip={({ value }) => (
-            <Text style={{ color: '#000', fontWeight: 'bold', paddingBottom: 2, }}>{value.toFixed(2)}</Text>
-          )}
+            key={JSON.stringify(chartData)}
+            data={chartData}
+            frontColor={'#6E9277'}
+            barWidth={50}
+            spacing={70}
+            barBorderTopLeftRadius={4}
+            barBorderTopRightRadius={4}
+            xAxisLength={windowWidth - 110}
+            rulesLength={windowWidth - 110}
+            xAxisLabelTextStyle={styles.label}
+            showFractionalValues={false}
+            initialSpacing={10}
+            noOfSections={4} // Adjust as needed
+            renderTooltip={({ value }) => (
+              <Text style={{ color: '#000', fontWeight: 'bold', paddingBottom: 2 }}>{value.toFixed(2)}</Text>
+            )}
           />
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
-};
-
+}
+  
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
@@ -163,6 +163,9 @@ const styles = StyleSheet.create({
   pillContainer: {
     alignItems: 'center',
   },
+  chartContainer: {
+    flex: 1,
+  },
   card: {
     backgroundColor: '#fff',
     borderWidth: 0.5,
@@ -181,8 +184,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginBottom: 15,
     fontWeight: 'bold',
-  },
-  chartContainer: {
   },
   label: {
     color: '#000',
