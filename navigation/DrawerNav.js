@@ -55,12 +55,13 @@ export default function DrawerNav({ onLogout, userData }) {
         {props => <SpendingScreen {...props} userData={userData} />}
       </Drawer.Screen>
       <Drawer.Screen 
-        name="  Budget Overview" 
-        component={BudgetScreen}
+        name="  Budget Overview"
         options={{
           drawerIcon: ({ color }) => <FontAwesome name="dollar" size={22} color="black" paddingLeft={16} />,
         }}
-      />
+      >
+        {props => <BudgetScreen {...props} userData={userData} />}
+      </Drawer.Screen>
       <Drawer.Screen 
         name="Goals" 
         component={GoalsScreen}

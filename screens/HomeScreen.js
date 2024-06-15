@@ -1,8 +1,11 @@
 import React , { useState, useEffect } from 'react';
-import { doc, getDocs, collection, query, where, onSnapshot } from 'firebase/firestore';
+import { doc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { BarChart } from "react-native-gifted-charts";
+import Zoo from './Zoo';
+
+const windowWidth = Dimensions.get('window').width;
 
 export default function HomeScreen({ userData }) {
   const [todayTotalSpendings, setTodayTotalSpendings] = useState(0);
@@ -57,25 +60,7 @@ export default function HomeScreen({ userData }) {
     <ScrollView contentContainerStyle={styles.container}>
 
       {/* Zoo Section */}
-      <View style={styles.card}>
-        <Text style={styles.zooText}>My Zoo</Text>
-        <Image source={{uri: "https://firebasestorage.googleapis.com/v0/b/zoollars.appspot.com/o/visuals%2Fzoo.png?alt=media&token=3cc5d796-8a37-4409-bef7-509a7bae89d6" }} 
-          style={styles.zoo}
-          resizeMode='contain'
-          />
-        <View style={styles.counterContainer}>
-          <Image source={{uri: "https://firebasestorage.googleapis.com/v0/b/zoollars.appspot.com/o/visuals%2Fcapybara.png?alt=media&token=2b826c27-1ef6-4bb0-872d-1a2a28fbf156" }} 
-          style={styles.capybara}
-          resizeMode='contain'
-          />
-          <Text style={styles.counterText}>0</Text>
-          <Image source={{uri: "https://firebasestorage.googleapis.com/v0/b/zoollars.appspot.com/o/visuals%2Fzoollarslogo.png?alt=media&token=cc11f9c7-83d1-479e-9d7f-32a0b4aa2333" }} 
-          style={styles.zoollars}
-          resizeMode='contain'
-          />
-          <Text style={styles.counterText}>0</Text>
-        </View>
-      </View>
+      <Zoo />
 
       {/* Today's Spendings Section */}
       <View style={styles.card}>
@@ -94,11 +79,11 @@ export default function HomeScreen({ userData }) {
           data = {chartData}
           frontColor={'#6E9277'}
           barWidth={50}
-          spacing={70}
+          spacing={50}
           barBorderTopLeftRadius={4}
           barBorderTopRightRadius={4}
-          xAxisLength={310}
-          rulesLength={310}
+          xAxisLength={windowWidth - 110}
+          rulesLength={windowWidth - 110}
           xAxisLabelTextStyle={styles.label}
           showFractionalValues={false}
           initialSpacing={10}
@@ -119,38 +104,6 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#fff',
   },
-  zooText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  zoo: {
-    height: 200,
-    width: 350,
-    marginHorizontal: 6,
-    alignSelf: 'center',
-  },
-  capybara: {
-    height: 40,
-    width: 30,
-    marginHorizontal: 6,
-  },
-  zoollars: {
-    height: 40,
-    width: 40,
-    marginHorizontal: 1,
-  },
-  counterText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginHorizontal: 3,
-    marginVertical: 7,
-  },
-  counterContainer: {
-    alignItems: 'flex-end',
-    justifyContent: 'flex-end',
-    flexDirection: 'row',
-  },
   card: {
     backgroundColor: '#fff',
     borderWidth: 0.5,
@@ -164,14 +117,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 1,
     elevation: 3,
-  },
-  welcomeText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  imageContainer: {
-    alignItems: 'center',
-    marginVertical: 20,
   },
   spendingText: {
     fontSize: 18,
@@ -193,6 +138,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   chartContainer: {
+    alignItems: 'center',
+    width: '100%',
   },
   label: {
     color: '#000',
