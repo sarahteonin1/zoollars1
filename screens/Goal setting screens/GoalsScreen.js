@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, Alert } from 'react-native';
 import GoalInputScreen from './GoalInputScreen';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { db } from '/Users/rakshanaravichandran/Desktop/zoollars1/firebaseConfig.js'; // Ensure this is the correct path to your firebaseConfig file
+import { db } from '../../firebaseConfig'; // Ensure this is the correct path to your firebaseConfig file
 
 const initialGoalsData = [
   {
