@@ -64,13 +64,13 @@ export default function DrawerNav({ onLogout, userData }) {
         {props => <BudgetScreen {...props} userData={userData} />}
       </Drawer.Screen>
       <Drawer.Screen 
-        name="Goals" 
-        component={GoalsScreen}
+        name="Goals"
         options={{
-          drawerIcon: ({ color }) => <FontAwesome5 name="flag" size={22} color="black" paddingLeft={13} />,
+          drawerIcon: ({ color }) => <FontAwesome5 name="money-bill-alt" size={20} color="black" paddingLeft={10} />,
         }}
-      />
-      
+      >
+        {props => <GoalsScreen {...props} userData={userData} />}
+      </Drawer.Screen>
       <Drawer.Screen 
         name="Challenges" 
         component={ChallengesScreen}

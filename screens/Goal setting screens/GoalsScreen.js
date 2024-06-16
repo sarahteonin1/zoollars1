@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, Alert } from 'react-native';
 import GoalInputScreen from './GoalInputScreen';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '../../firebaseConfig'; // Ensure this is the correct path to your firebaseConfig file
 
 const initialGoalsData = [
@@ -17,7 +17,7 @@ const initialGoalsData = [
   },
 ];
 
-const GoalsScreen = () => {
+const GoalsScreen = ({ userData }) => {
   const [goalsData, setGoalsData] = useState(initialGoalsData);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState(null);
@@ -27,7 +27,7 @@ const GoalsScreen = () => {
     const checkEditRestriction = async () => {
       const newData = await Promise.all(
         goalsData.map(async (goal) => {
-          const docRef = doc(db, "goals", goal.id);
+          const docRef = doc(db, "users", userData.email, "goals", goal.id);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
             return { ...goal, ...docSnap.data() };
@@ -37,8 +37,50 @@ const GoalsScreen = () => {
       );
       setGoalsData(newData);
     };
+
+    const fetchDataAndCalculate = async () => {
+      try {
+        const expensesCollectionRef = collection(doc(db, 'users', userData.email), 'expenses');
+        const expensesSnapshot = await getDocs(expensesCollectionRef);
+        const expenses = expensesSnapshot.docs.map(doc => doc.data());
+
+        const totalIncome = expenses
+          .filter(expense => expense.type === 'Income')
+          .reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+
+        const totalExpenditure = expenses
+          .filter(expense => expense.type === 'Expenditure')
+          .reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+
+        const percentageSpent = totalIncome > 0 ? ((totalExpenditure / totalIncome) * 100).toFixed(2) : 0;
+
+        const updatedGoalsData = goalsData.map(goal => {
+          if (goal.id === '1') {
+            return {
+              ...goal,
+              spent: `${percentageSpent}% of your budget so far`,
+            };
+          } else {
+            const categoryExpenditure = expenses
+              .filter(expense => expense.type === 'Expenditure' && expense.category === goal.category)
+              .reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+
+            return {
+              ...goal,
+              spent: `$${categoryExpenditure} on ${goal.category} so far`,
+            };
+          }
+        });
+
+        setGoalsData(updatedGoalsData);
+      } catch (error) {
+        console.error('Error fetching and calculating data: ', error);
+      }
+    };
+
     checkEditRestriction();
-  }, []);
+    fetchDataAndCalculate();
+  }, [userData.email]);
 
   const handleSave = async (id, newGoal) => {
     const currentTime = new Date();
@@ -79,8 +121,10 @@ const GoalsScreen = () => {
     setIsNewGoal(false);
 
     try {
-      const docRef = doc(db, 'goals', id);
-      await setDoc(docRef, newGoalData);
+      const userDocRef = doc(db, 'users', userData.email);
+      const goalsCollectionRef = collection(userDocRef, 'goals');
+      const goalDocRef = doc(goalsCollectionRef, id);
+      await setDoc(goalDocRef, newGoalData);
       console.log('Document written with ID: ', id);
     } catch (e) {
       console.error('Error adding document: ', e);
@@ -164,6 +208,7 @@ const GoalsScreen = () => {
           onSave={(newGoal) => handleSave(selectedGoal.id, newGoal)}
           onClose={() => setModalVisible(false)}
           isNewGoal={isNewGoal}
+          userData={userData} // Pass userData to GoalInputScreen
         />
       </Modal>
     </View>
