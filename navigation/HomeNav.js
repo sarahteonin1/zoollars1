@@ -7,6 +7,7 @@ import HomeScreen from '../screens/HomeScreen';
 import BudgetInputScreen from '../screens/BudgetInputScreen';
 import GoalsScreen from '../screens/Goal setting screens/GoalsScreen';
 import GoalInputScreen from '../screens/Goal setting screens/GoalInputScreen';
+import ChallengesScreen from '../screens/ChallengesScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -64,6 +65,20 @@ export default function HomeNav({ userData }) {
         >
           {props => <BudgetInputScreen {...props} userData={userData} />}
         </Stack.Screen>
+        <Stack.Screen 
+        name="Challenges"
+        options={{ 
+          headerTitle: 'Challenges',
+          headerRight: () => (
+            <View style={styles.coinsContainer}>
+              <Image source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/zoollars.appspot.com/o/visuals%2Fzoollarslogo.png?alt=media&token=cc11f9c7-83d1-479e-9d7f-32a0b4aa2333' }} style={styles.coinIcon} />
+              <Text style={styles.coinsText}>{userData.coins}</Text>
+            </View>
+          ),
+        }}
+      >
+        {props => <ChallengesScreen {...props} userData={userData} />}
+      </Stack.Screen>
     </Stack.Navigator>
   );
 }
