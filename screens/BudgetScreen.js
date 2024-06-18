@@ -99,7 +99,7 @@ export default function BudgetScreen({ userData }) {
 
       <ScrollView contentContainerStyle={styles.chartContainer}>
       {/* Zoo Section */}
-      <Zoo />
+      <Zoo userData={userData}/>
 
       {/* Scrollable Chart Section */}
       

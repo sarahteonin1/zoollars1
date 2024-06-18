@@ -60,7 +60,7 @@ export default function HomeScreen({ userData }) {
     <ScrollView contentContainerStyle={styles.container}>
 
       {/* Zoo Section */}
-      <Zoo />
+      <Zoo userData={userData}/>
 
       {/* Today's Spendings Section */}
       <View style={styles.card}>

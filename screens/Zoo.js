@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, View, StyleSheet, Image } from 'react-native';
 
-export default function Zoo() {
+export default function Zoo({ userData }) {
     return (
         <View style={styles.card}>
         <Text style={styles.zooText}>My Zoo</Text>
@@ -19,7 +19,7 @@ export default function Zoo() {
           style={styles.zoollars}
           resizeMode='contain'
           />
-          <Text style={styles.counterText}>0</Text>
+          <Text style={styles.counterText}>{userData.zoollars}</Text>
         </View>
       </View>
 
