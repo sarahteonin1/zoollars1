@@ -80,11 +80,14 @@ export default function DrawerNav({ onLogout, userData }) {
       />
       <Drawer.Screen 
         name="Store" 
-        component={StoreScreen}
         options={{
           drawerIcon: ({ color }) => <MaterialIcons name="storefront" size={27} color="black" paddingLeft={10} />,
         }}
-      />
+        >
+        {props => <StoreScreen {...props} userData={userData} />}
+
+        </Drawer.Screen>
+    
       <Drawer.Screen 
         name="Friends" 
         component={FriendsScreen}
