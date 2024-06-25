@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, Alert, ActivityIndicator} from 'react-native';
 import GoalInputScreen from './GoalInputScreen';
 import GoalEditScreen from './GoalEditScreen';
 import { doc, setDoc, getDoc, collection, getDocs, onSnapshot } from 'firebase/firestore';
-import { db } from '../../firebaseConfig'; // Ensure this is the correct path to your firebaseConfig file
+import { db } from '../../firebaseConfig';
 
 const initialGoalsData = [
   {
@@ -25,48 +25,38 @@ export default function GoalsScreen({ userData }) {
   const [monthlyAmount, setMonthlyAmount] = useState(0);
 
   useEffect(() => {
-
-    const fetchGoals = async () => {
-      try {
-        const userDocRef = doc(db, 'users', userData.email);
-        const goalsCollectionRef = collection(userDocRef, 'goals');
-        const goalsSnapshot = await getDocs(goalsCollectionRef);
-        const goals = goalsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
-        const monthlyGoal = goals.find(goal => goal.category === 'Monthly');
-        const categoryGoals = goals.filter(goal => goal.category !== 'Monthly');
-
-        // Sort goals (putting Monthly goal first)
-        const sortedGoals = [monthlyGoal, ...categoryGoals].filter(Boolean);
-
-        setGoalsData(sortedGoals);
-        if (monthlyGoal) {
-          setMonthlyAmount(monthlyGoal.amount);
-        }
-      } catch (error) {
-        console.error('Error fetching goals: ', error);
-      }
-    };
+    const userDocRef = doc(db, 'users', userData.email);
+    const goalsCollectionRef = collection(userDocRef, 'goals');
 
     const subscribeToGoals = () => {
-      const userDocRef = doc(db, 'users', userData.email);
-      const goalsCollectionRef = collection(userDocRef, 'goals');
-      
       return onSnapshot(goalsCollectionRef, (snapshot) => {
         const goals = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         const monthlyGoal = goals.find(goal => goal.category === 'Monthly');
         const categoryGoals = goals.filter(goal => goal.category !== 'Monthly');
   
+        console.log('Fetched goals:', goals); // Debug log
+        console.log('Monthly Goal:', monthlyGoal); // Debug log
+        console.log('Category Goals:', categoryGoals); // Debug log
         // Sort goals (putting Monthly goal first)
+
         const sortedGoals = [monthlyGoal, ...categoryGoals].filter(Boolean);
+        console.log('Sorted Goals:', sortedGoals);
         setGoalsData(sortedGoals);
+        
         if (monthlyGoal) {
           setMonthlyAmount(monthlyGoal.amount);
           setEditedMonthly(monthlyGoal.hasEdited);
         }
       });
     };
+    
+    const unsubscribe = subscribeToGoals();
+    return () => unsubscribe();
+    
+  }, [userData.email]);
 
+
+ useEffect(() => {
     const fetchDataAndCalculate = async () => {
       try {
         const expensesCollectionRef = collection(doc(db, 'users', userData.email), 'expenses');
@@ -107,10 +97,7 @@ export default function GoalsScreen({ userData }) {
       }
     };
 
-    fetchGoals();
-    const unsubscribe = subscribeToGoals();
-
-    return () => unsubscribe();
+    fetchDataAndCalculate();
   }, [userData.email]);
 
   const handleSave = async (oldGoal, newGoal) => {
