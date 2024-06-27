@@ -28,33 +28,27 @@ export default function GoalsScreen({ userData }) {
     const userDocRef = doc(db, 'users', userData.email);
     const goalsCollectionRef = collection(userDocRef, 'goals');
 
-    const subscribeToGoals = () => {
-      return onSnapshot(goalsCollectionRef, (snapshot) => {
-        const goals = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const monthlyGoal = goals.find(goal => goal.category === 'Monthly');
-        const categoryGoals = goals.filter(goal => goal.category !== 'Monthly');
+    const unsubscribe = onSnapshot(goalsCollectionRef, (snapshot) => {
+      const goals = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const monthlyGoal = goals.find(goal => goal.category === 'Monthly');
+      const categoryGoals = goals.filter(goal => goal.category !== 'Monthly');
   
-        console.log('Fetched goals:', goals); // Debug log
-        console.log('Monthly Goal:', monthlyGoal); // Debug log
-        console.log('Category Goals:', categoryGoals); // Debug log
-        // Sort goals (putting Monthly goal first)
+      console.log('Fetched goals:', goals); // Debug log
+      console.log('Monthly Goal:', monthlyGoal); // Debug log
+      console.log('Category Goals:', categoryGoals); // Debug log
 
-        const sortedGoals = [monthlyGoal, ...categoryGoals].filter(Boolean);
-        console.log('Sorted Goals:', sortedGoals);
-        setGoalsData(sortedGoals);
-        
-        if (monthlyGoal) {
-          setMonthlyAmount(monthlyGoal.amount);
-          setEditedMonthly(monthlyGoal.hasEdited);
-        }
-      });
-    };
-    
-    const unsubscribe = subscribeToGoals();
+      const sortedGoals = [monthlyGoal, ...categoryGoals].filter(Boolean);
+      console.log('Sorted Goals:', sortedGoals);
+      setGoalsData(sortedGoals);
+
+      if (monthlyGoal) {
+        setMonthlyAmount(monthlyGoal.amount);
+        setEditedMonthly(monthlyGoal.hasEdited);
+      }
+    });
+
     return () => unsubscribe();
-    
   }, [userData.email]);
-
 
  useEffect(() => {
     const fetchDataAndCalculate = async () => {
@@ -96,9 +90,11 @@ export default function GoalsScreen({ userData }) {
         console.error('Error fetching and calculating data: ', error);
       }
     };
+    if (goalsData.length > 1) {
+      fetchDataAndCalculate();
+    }
+  }, [goalsData, userData.email]);
 
-    fetchDataAndCalculate();
-  }, [userData.email]);
 
   const handleSave = async (oldGoal, newGoal) => {
     const currentTime = new Date();
@@ -146,8 +142,10 @@ export default function GoalsScreen({ userData }) {
     setIsEditing(true);
     setModalVisible(true);
   };
-
+  
   const renderGoalItem = ({ item }) => {
+    console.log('Rendering Goal:', item);
+
     if (item.category === 'Monthly') {
       return (
         <View style={styles.card}>
