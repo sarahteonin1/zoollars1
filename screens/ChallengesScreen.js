@@ -36,7 +36,7 @@ const ChallengesScreen = ({ userData }) => {
       }
     };
     fetchUserData();
-  }, [userData.email]);
+  }, [userData]);
 
   const handleRedeem = (challenge) => {
     setSelectedChallenge(challenge);
@@ -74,7 +74,10 @@ const ChallengesScreen = ({ userData }) => {
     <View style={styles.challengeItem}>
       <Text style={styles.challengeText}>{item.text}</Text>
       {!item.completed ? (
-        <Pressable style={styles.rewardButton} onPress={() => handleRedeem(item)}>
+        <Pressable
+          style={[styles.rewardButton, styles.disabledButton]}
+          disabled={true}
+        >
           <Image source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/zoollars.appspot.com/o/visuals%2Fzoollarslogo.png?alt=media&token=cc11f9c7-83d1-479e-9d7f-32a0b4aa2333' }} style={styles.coinIcon} />
           <Text style={styles.rewardText}>{item.reward}</Text>
         </Pressable>
@@ -86,10 +89,14 @@ const ChallengesScreen = ({ userData }) => {
     </View>
   );
 
+  if (!userData) {
+    return <Text>Loading...</Text>;
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.coinsContainer}>
-        <Text style={styles.coinsText}>Coins: {userData.zoollars}</Text>
+        <Text style={styles.coinsText}>Coins: {userData.zoollars || 0}</Text>
       </View>
       <FlatList
         data={challenges}
@@ -201,6 +208,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  disabledButton: {
+    backgroundColor: '#ccc',
   },
 });
 

@@ -73,11 +73,12 @@ export default function DrawerNav({ onLogout, userData }) {
       </Drawer.Screen>
       <Drawer.Screen 
         name="Challenges" 
-        component={ChallengesScreen}
         options={{
           drawerIcon: ({ color }) => <FontAwesome6 name="list-check" size={22} color="black" paddingLeft={13} />,
         }}
-      />
+      >
+                {props => <ChallengesScreen {...props} userData={userData} />}
+      </Drawer.Screen>
       <Drawer.Screen 
         name="Store" 
         component={StoreScreen}
