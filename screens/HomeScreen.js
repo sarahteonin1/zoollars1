@@ -1,5 +1,5 @@
-import React , { useState, useEffect } from 'react';
-import { doc, collection, query, where, onSnapshot } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { doc, collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { BarChart } from "react-native-gifted-charts";
@@ -10,6 +10,8 @@ const windowWidth = Dimensions.get('window').width;
 export default function HomeScreen({ userData }) {
   const [todayTotalSpendings, setTodayTotalSpendings] = useState(0);
   const [chartData, setChartData] = useState([]);
+  const [totalIncome, setTotalIncome] = useState(0);
+  const [percentageSpent, setPercentageSpent] = useState(0);
 
   useEffect(() => {
     const fetchTodayTotalSpendings = async () => {
@@ -53,8 +55,33 @@ export default function HomeScreen({ userData }) {
       return () => unsubscribe();
     };
 
+    const fetchTotalIncome = async () => {
+      const userDocRef = doc(db, 'users', userData.email);
+      const expensesRef = collection(db, `users/${userDocRef.id}/expenses`);
+      const q = query(expensesRef, where("type", "==", "Income"));
+
+      const querySnapshot = await getDocs(q);
+      let totalIncome = 0;
+
+      querySnapshot.forEach((doc) => {
+        totalIncome += parseFloat(doc.data().amount);
+      });
+
+      setTotalIncome(totalIncome);
+    };
+
+    const calculatePercentageSpent = () => {
+      if (totalIncome > 0) {
+        setPercentageSpent((todayTotalSpendings / totalIncome) * 100);
+      } else {
+        setPercentageSpent(0);
+      }
+    };
+
     fetchTodayTotalSpendings();
-  }, []);
+    fetchTotalIncome();
+    calculatePercentageSpent();
+  }, [userData.email, todayTotalSpendings, totalIncome]);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -66,16 +93,15 @@ export default function HomeScreen({ userData }) {
       <View style={styles.card}>
         <Text style={styles.spendingText}>Total Spendings Today</Text>
         <Text style={styles.amountText}>${todayTotalSpendings.toFixed(2)}</Text>
-        <Text style={styles.budgetText}>You have spent 20% of your total budget today</Text>
+        <Text style={styles.budgetText}>You have spent {percentageSpent.toFixed(2)}% of your total budget today</Text>
       </View>
 
       {/* Chart Section */}
       <View style={styles.card}>
         <Text style={styles.chartTitle}>Today's Spendings</Text>
-        
-          <BarChart 
+        <BarChart 
           key={JSON.stringify(chartData)}
-          data = {chartData}
+          data={chartData}
           frontColor={'#6E9277'}
           barWidth={50}
           spacing={50}
@@ -88,9 +114,9 @@ export default function HomeScreen({ userData }) {
           initialSpacing={10}
           noOfSections={4} // Adjust as needed
           renderTooltip={({ value }) => (
-            <Text style={{ color: '#000', fontWeight: 'bold', paddingBottom: 2, }}>{value.toFixed(2)}</Text>
+            <Text style={{ color: '#000', fontWeight: 'bold', paddingBottom: 2 }}>{value.toFixed(2)}</Text>
           )}
-          />
+        />
       </View>
     </ScrollView>
   );
@@ -140,5 +166,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     width: 60,
     alignSelf: 'center',
-}
+  },
 });
