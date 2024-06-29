@@ -2,25 +2,24 @@ import React from 'react';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { TouchableOpacity } from 'react-native';
 import { Feather, FontAwesome6, FontAwesome5, FontAwesome, MaterialIcons, Ionicons } from '@expo/vector-icons';
-import ProfileScreen from '../screens/ProfileScreen';
+import ProfileNav from './ProfileNav';
 import SpendingScreen from '../screens/SpendingScreen';
 import BudgetScreen from '../screens/BudgetScreen';
 import GoalsScreen from '../screens/Goal setting screens/GoalsScreen';
-import GoalInputScreen from '../screens/Goal setting screens/GoalInputScreen';
 import ChallengesScreen from '../screens/ChallengesScreen';
 import StoreScreen from '../screens/StoreScreen';
 import FriendsScreen from '../screens/FriendsScreen';
 import HomeNav from '../navigation/HomeNav';
-import ProfileNav from './ProfileNav';
 
 const Drawer = createDrawerNavigator();
+
 const CustomHeader = ({ navigation }) => (
-<TouchableOpacity onPress={() => navigation.toggleDrawer()}>
+  <TouchableOpacity onPress={() => navigation.toggleDrawer()}>
     <Feather name="menu" size={24} color="black" style={{ paddingLeft: 20 }} />
-</TouchableOpacity>
+  </TouchableOpacity>
 );
 
-export default function DrawerNav({ onLogout, userData }) {
+export default function DrawerNav({ onLogout, userData, onPurchase, purchasedAnimal }) {
   return (
     <Drawer.Navigator 
       initialRouteName="Home"
@@ -45,7 +44,7 @@ export default function DrawerNav({ onLogout, userData }) {
           drawerIcon: ({ color }) => <Feather name="home" size={24} color="black" paddingLeft={10} />,
         }}
       >
-        {props => <HomeNav {...props} userData={userData} />}
+        {props => <HomeNav {...props} userData={userData} purchasedAnimal={purchasedAnimal} />}
       </Drawer.Screen>
       <Drawer.Screen 
         name="Spendings Overview"
@@ -77,18 +76,16 @@ export default function DrawerNav({ onLogout, userData }) {
           drawerIcon: ({ color }) => <FontAwesome6 name="list-check" size={22} color="black" paddingLeft={13} />,
         }}
       >
-                {props => <ChallengesScreen {...props} userData={userData} />}
+        {props => <ChallengesScreen {...props} userData={userData} />}
       </Drawer.Screen>
       <Drawer.Screen 
         name="Store" 
         options={{
           drawerIcon: ({ color }) => <MaterialIcons name="storefront" size={27} color="black" paddingLeft={10} />,
         }}
-        >
-        {props => <StoreScreen {...props} userData={userData} />}
-
-        </Drawer.Screen>
-    
+      >
+        {props => <StoreScreen {...props} userData={userData} onPurchase={onPurchase} />}
+      </Drawer.Screen>
       <Drawer.Screen 
         name="Friends" 
         component={FriendsScreen}

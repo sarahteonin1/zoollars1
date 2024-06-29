@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Image, StyleSheet, TouchableOpacity, Dimensions, Modal } from 'react-native';
 import { doc, setDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig'; // Ensure this is the correct path to your firebaseConfig file
+import { db } from '../firebaseConfig';
 
 const animals = [
-  { id: 1, name: 'capybara', description: 'I am a capybara! I\'m shy and I like to take long naps zzz', price: 100, imageUrl: 'https://firebasestorage.googleapis.com/v0/b/zoollars.appspot.com/o/visuals%2Fcapybara.png?alt=media&token=2b826c27-1ef6-4bb0-872d-1a2a28fbf156' },
+  { id: 1, name: 'capybara', description: 'I am a capybara! I\'m shy and I like to take long naps zzz', price: 100, imageUrl: 'https://firebasestorage.googleapis.com/v0/b/zoollars.appspot.com/o/visuals%2Fcapybara.png?alt=media&token=8db9894d-64fd-4e26-817e-66d6c620c9d6' },
   { id: 2, name: 'panda', description: 'I am a panda! I like to munch on my bamboo', price: 100, imageUrl: 'https://firebasestorage.googleapis.com/v0/b/zoollars.appspot.com/o/visuals%2Fpanda.png?alt=media&token=778d98a1-449b-4f94-bdf4-2d7064e4ebc4' },
   { id: 3, name: 'sheep', description: 'I am a sheep! baa baa WHITE sheep I have a lot of wool...', price: 100, imageUrl: 'https://firebasestorage.googleapis.com/v0/b/zoollars.appspot.com/o/visuals%2Fsheep.png?alt=media&token=5a15bfe9-1826-4979-a10a-554e8b3633ae' },
   { id: 4, name: 'parrot', description: 'I am a parrot! I\'m always here to talk to you!', price: 200, imageUrl: 'https://firebasestorage.googleapis.com/v0/b/zoollars.appspot.com/o/visuals%2Fparrot.png?alt=media&token=5d3a106d-d683-42d6-aee6-d8724ff94a13' },
@@ -16,7 +16,7 @@ const animals = [
   { id: 10, name: 'giraffe', description: 'I am a giraffe! I can help you reach high places!', price: 300, imageUrl: 'https://firebasestorage.googleapis.com/v0/b/zoollars.appspot.com/o/visuals%2Fgiraffe.png?alt=media&token=339d9f4a-dbef-4114-bd21-06e8e93f578d' },
 ];
 
-const StoreScreen = ({ userData }) => {
+const StoreScreen = ({ userData, onPurchase }) => {
   const [userCoins, setUserCoins] = useState(userData.zoollars);
   const [selectedAnimal, setSelectedAnimal] = useState(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -43,6 +43,9 @@ const StoreScreen = ({ userData }) => {
 
       setShowConfirmModal(false);
       setShowSuccessModal(true);
+
+      // Add the purchased animal to the zoo
+      onPurchase(selectedAnimal);
 
       setTimeout(() => {
         setShowSuccessModal(false);

@@ -1,13 +1,15 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image, } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Image, TouchableWithoutFeedback } from "react-native";
 import { Entypo } from '@expo/vector-icons';
 import EditPfp from './profile edits/EditPfp';
 import EditName from './profile edits/EditName';
 import ImageViewer from "./profile edits/ImageViewer";
+import Zoo from "./Zoo"; // Ensure the correct path
 
 export default function ProfileScreen({ userData, onLogout }) {
   const [photoModalVisible, setPhotoModalVisible] = useState(false);
   const [nameModalVisible, setNameModalVisible] = useState(false);
+  const [zooModalVisible, setZooModalVisible] = useState(false); // State to control Zoo modal visibility
   const [profilePicture, setProfilePicture] = useState(null);
   const [currentUserData, setCurrentUserData] = useState(userData);
 
@@ -65,7 +67,10 @@ export default function ProfileScreen({ userData, onLogout }) {
         <Text style={styles.infoText}>Email: </Text>
         <Text style={styles.userEmail}>{userData.email}</Text>
       </View>
-      <TouchableOpacity style={styles.zooContainer}>
+      <TouchableOpacity 
+        style={styles.zooContainer}
+        onPress={() => setZooModalVisible(true)} // Show the modal
+      >
         <Text style={styles.infoText}>My Zoo</Text>
         <Entypo name="chevron-small-right" size={24} color="black"/>
       </TouchableOpacity>
@@ -74,6 +79,22 @@ export default function ProfileScreen({ userData, onLogout }) {
           <Text style={styles.logout}>Logout</Text>
         </TouchableOpacity>
       </View>
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={zooModalVisible}
+        onRequestClose={() => setZooModalVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setZooModalVisible(false)}>
+          <View style={styles.modalContainer}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.modalContent}>
+                <Zoo userData={userData} purchasedAnimal={null} />
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 }
@@ -159,5 +180,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     padding: 5,
     borderRadius: 20,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: 'transparent',
+    borderRadius: 10,
+    alignItems: 'center',
   },
 });

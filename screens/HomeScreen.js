@@ -7,7 +7,7 @@ import Zoo from './Zoo';
 
 const windowWidth = Dimensions.get('window').width;
 
-export default function HomeScreen({ userData }) {
+export default function HomeScreen({ userData, purchasedAnimal }) {
   const [todayTotalSpendings, setTodayTotalSpendings] = useState(0);
   const [chartData, setChartData] = useState([]);
   const [totalIncome, setTotalIncome] = useState(0);
@@ -87,7 +87,7 @@ export default function HomeScreen({ userData }) {
     <ScrollView contentContainerStyle={styles.container}>
 
       {/* Zoo Section */}
-      <Zoo />
+      <Zoo userData={userData} purchasedAnimal={purchasedAnimal} />
 
       {/* Today's Spendings Section */}
       <View style={styles.card}>

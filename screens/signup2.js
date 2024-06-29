@@ -23,6 +23,7 @@ export default function SignupScreen2({ onLogin }) {
           name: name,
           email: email,
           password: password,
+          zoollars: 500,
           timestamp: new Date(),
       }).then(() => {
           // Navigate to homescreen on successful submission

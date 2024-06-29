@@ -10,7 +10,7 @@ import GoalInputScreen from '../screens/Goal setting screens/GoalInputScreen';
 
 const Stack = createNativeStackNavigator();
 
-export default function HomeNav({ userData }) {
+export default function HomeNav({ userData, purchasedAnimal }) {
   const navigation = useNavigation();
 
   return (
@@ -42,7 +42,7 @@ export default function HomeNav({ userData }) {
           title: userData ? `Welcome, ${userData.name}!` : 'Welcome!',
         }}
         >
-          {props => <HomeScreen {...props} userData={userData} />}
+          {props => <HomeScreen {...props} userData={userData} purchasedAnimal={purchasedAnimal} />}
         </Stack.Screen>
         <Stack.Screen 
           name="Budget Input"

@@ -1,11 +1,41 @@
 import React, { useState, useEffect } from 'react';
-import { doc, collection, query, where, onSnapshot } from 'firebase/firestore';
+import { doc, collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { BarChart } from "react-native-gifted-charts";
 import Zoo from './Zoo';
 
 const windowWidth = Dimensions.get('window').width;
+
+const fetchExpensesForMonth = async (userDocRef, year, month) => {
+  const expensesRef = collection(db, `users/${userDocRef.id}/expenses`);
+  const q = query(expensesRef, where("month", "==", month), where("year", "==", year));
+
+  const querySnapshot = await getDocs(q);
+
+  const expenses = [];
+  querySnapshot.forEach((doc) => {
+    expenses.push(doc.data());
+  });
+  return expenses;
+};
+
+const calculateTotals = (expenses) => {
+  let totalIncome = 0;
+  let totalExpenditure = 0;
+
+  expenses.forEach((expense) => {
+    const amount = parseFloat(expense.amount);
+    if (expense.type === 'Income') {
+      totalIncome += amount;
+    } else if (expense.type === 'Expenditure'){
+      totalExpenditure += amount;
+    }
+  });
+
+  const netTotal = totalIncome - totalExpenditure;
+  return netTotal;
+};
 
 export default function BudgetScreen({ userData }) {
   const [activePill, setActivePill] = useState('daily');
@@ -24,6 +54,7 @@ export default function BudgetScreen({ userData }) {
     } else if (activePill === 'monthly') {
       fetchMonthlyTotalSpendings();
       fetchMonthlySpendingByMonth();
+      fetchMonthlySavings();
     }
   }, [activePill]);
 
@@ -116,48 +147,47 @@ export default function BudgetScreen({ userData }) {
     return () => unsubscribe();
   };
   
-const fetchWeeklySpendingByDay = async () => {
-  const userDocRef = doc(db, 'users', userData.email);
-  const today = new Date();
-  const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(endOfWeek.getDate() + 6);
-
-  const expensesRef = collection(db, `users/${userDocRef.id}/expenses`);
-  const q = query(expensesRef, where('date', '>=', startOfWeek), where('date', '<=', endOfWeek));
-
-  const unsubscribe = onSnapshot(q, (querySnapshot) => {
-    const expenses = [];
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      data.date = data.date.toDate ? data.date.toDate() : new Date(data.date); // Convert Firestore Timestamp to Date
-      expenses.push(data);
-    });
-
-    let daySpendings = {};
-
-    expenses.forEach((expense) => {
-      if (expense.type === 'Expenditure') {
-        const day = expense.date.getDay();
-        if (daySpendings[day]) {
-          daySpendings[day] += parseFloat(expense.amount);
-        } else {
-          daySpendings[day] = parseFloat(expense.amount);
+  const fetchWeeklySpendingByDay = async () => {
+    const userDocRef = doc(db, 'users', userData.email);
+    const today = new Date();
+    const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(endOfWeek.getDate() + 6);
+  
+    const expensesRef = collection(db, `users/${userDocRef.id}/expenses`);
+    const q = query(expensesRef, where('date', '>=', startOfWeek), where('date', '<=', endOfWeek));
+  
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const expenses = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        data.date = data.date.toDate ? data.date.toDate() : new Date(data.date); // Convert Firestore Timestamp to Date
+        expenses.push(data);
+      });
+  
+      let daySpendings = {};
+  
+      expenses.forEach((expense) => {
+        if (expense.type === 'Expenditure') {
+          const day = expense.date.getDay();
+          if (daySpendings[day]) {
+            daySpendings[day] += parseFloat(expense.amount);
+          } else {
+            daySpendings[day] = parseFloat(expense.amount);
+          }
         }
-      }
+      });
+  
+      const formattedChartData = Object.keys(daySpendings).map(day => ({
+        value: daySpendings[day],
+        label: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day],
+      }));
+  
+      setWeeklySpendingData(formattedChartData);
     });
-
-    const formattedChartData = Object.keys(daySpendings).map(day => ({
-      value: daySpendings[day],
-      label: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day],
-    }));
-
-    setWeeklySpendingData(formattedChartData);
-  });
-
-  return () => unsubscribe();
-};
-
+  
+    return () => unsubscribe();
+  };
 
   const fetchMonthlyTotalSpendings = async () => {
     const userDocRef = doc(db, 'users', userData.email);
@@ -239,6 +269,29 @@ const fetchWeeklySpendingByDay = async () => {
     return () => unsubscribe();
   };
 
+  const fetchMonthlySavings = async () => {
+    const userDocRef = doc(db, 'users', userData.email);
+
+    const savingsDataArray = [];
+    const availableMonths = [];
+
+    for (let month = 0; month < 12; month++) {
+      const year = new Date().getFullYear(); // assuming current year
+      const expenses = await fetchExpensesForMonth(userDocRef, year, month + 1); // month is 1-based in fetchExpensesForMonth
+      const netTotal = calculateTotals(expenses);
+
+      if (expenses.length > 0) {
+        savingsDataArray.push({
+          value: netTotal,
+          label: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month]
+        });
+        availableMonths.push(month);
+      }
+    }
+
+    setSavingsData(savingsDataArray);
+  };
+
   const handleWeeklyPress = () => {
     setActivePill('weekly');
   };
@@ -281,7 +334,7 @@ const fetchWeeklySpendingByDay = async () => {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Zoo Section */}
-        <Zoo />
+        <Zoo userData={userData} />
 
         {/* Scrollable Chart Section */}
         <View style={styles.card}>
