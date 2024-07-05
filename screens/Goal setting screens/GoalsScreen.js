@@ -1,215 +1,245 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, Alert } from 'react-native';
 import GoalInputScreen from './GoalInputScreen';
-import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
+import GoalEditScreen from './GoalEditScreen';
+import { doc, setDoc, getDoc, collection, getDocs, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebaseConfig'; // Ensure this is the correct path to your firebaseConfig file
+import { fetchMonthlyExpenses, fetchUserIncome, calculateSpentPercentage, categorySpent } from './budgetUtils';
 
 const initialGoalsData = [
   {
-    id: '1',
-    title: 'I want to save',
-    amount: '$0',
-    description: 'this month',
-    spent: '0% of your budget so far',
-    editText: 'Edit',
-    hasEdited: false,
+    id: 'Monthly goal',
+    amount: '0',
+    hasEdited: 0,
+    category: 'Monthly',
     lastEdit: null,
   },
 ];
 
-const GoalsScreen = ({ userData }) => {
+export default function GoalsScreen ({ userData }) {
   const [goalsData, setGoalsData] = useState(initialGoalsData);
+  const [categoryGoals, setCategoryGoals] = useState([]);
+  const [categoryExpenses, setCategoryExpenses] = useState({});
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [isNewGoal, setIsNewGoal] = useState(false);
+  const [editedMonthly, setEditedMonthly] = useState(0);
+  const [monthlyAmount, setMonthlyAmount] = useState(0);
+  const [totalExpenditure, setTotalExpenditure] = useState(0);
+  const [income, setIncome] = useState(0);
 
   useEffect(() => {
-    const checkEditRestriction = async () => {
-      const newData = await Promise.all(
-        goalsData.map(async (goal) => {
-          const docRef = doc(db, "users", userData.email, "goals", goal.id);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            return { ...goal, ...docSnap.data() };
-          }
-          return goal;
-        })
-      );
-      setGoalsData(newData);
-    };
-
-    const fetchDataAndCalculate = async () => {
+    const fetchMonthlyGoalData = async () => {
       try {
-        const expensesCollectionRef = collection(doc(db, 'users', userData.email), 'expenses');
-        const expensesSnapshot = await getDocs(expensesCollectionRef);
-        const expenses = expensesSnapshot.docs.map(doc => doc.data());
+        const userDocRef = doc(db, 'users', userData.email);
+        const goalDocRef = doc(userDocRef, 'goals', 'Monthly goal');
+        const goalDoc = await getDoc(goalDocRef);
 
-        const totalIncome = expenses
-          .filter(expense => expense.type === 'Income')
-          .reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
-
-        const totalExpenditure = expenses
-          .filter(expense => expense.type === 'Expenditure')
-          .reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
-
-        const percentageSpent = totalIncome > 0 ? ((totalExpenditure / totalIncome) * 100).toFixed(2) : 0;
-
-        const updatedGoalsData = goalsData.map(goal => {
-          if (goal.id === '1') {
-            return {
-              ...goal,
-              spent: `${percentageSpent}% of your budget so far`,
-            };
-          } else {
-            const categoryExpenditure = expenses
-              .filter(expense => expense.type === 'Expenditure' && expense.category === goal.category)
-              .reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
-
-            return {
-              ...goal,
-              spent: `$${categoryExpenditure} on ${goal.category} so far`,
-            };
-          }
-        });
-
-        setGoalsData(updatedGoalsData);
+        if (goalDoc.exists()) {
+          const goalData = goalDoc.data();
+          setGoalsData([goalData]);
+        } else {
+          // If the document does not exist, set initial goal data
+          await setDoc(goalDocRef, initialGoalsData[0]);
+          setGoalsData(initialGoalsData);
+        }
       } catch (error) {
-        console.error('Error fetching and calculating data: ', error);
+        console.error('Error fetching goal data: ', error);
       }
     };
 
-    checkEditRestriction();
-    fetchDataAndCalculate();
+    const unsubscribe = onSnapshot(doc(db, `users/${userData.email}/goals/Monthly goal`), () => {
+      fetchMonthlyGoalData();
+    });
+
+    return () => unsubscribe();
   }, [userData.email]);
 
-  const handleSave = async (id, newGoal) => {
-    const currentTime = new Date();
-    let newGoalData;
+  useEffect(() => { 
+    const fetchCategoryGoals = async () => {
+      try {
+        const userDocRef = doc(db, 'users', userData.email);
+        const goalsCollectionRef = collection(userDocRef, 'goals');
+        const goalsSnapshot = await getDocs(goalsCollectionRef);
+        const categoryGoalsData = goalsSnapshot.docs
+          .map(doc => doc.data())
+          .filter(goal => goal.category !== 'Monthly');
+        setCategoryGoals(categoryGoalsData);
 
-    if (isNewGoal) {
-      id = (goalsData.length + 1).toString();
-      newGoalData = {
-        id,
-        title: `I want to spend a maximum of`,
-        amount: newGoal.amount,
-        category: newGoal.category,
-        description: 'this month',
-        spent: `$0 on ${newGoal.category} so far`,
-        editText: 'Edit',
-        lastEdit: currentTime.toISOString(),
-        hasEdited: false,
-      };
-    } else {
-      const goalToUpdate = goalsData.find(goal => goal.id === id);
-      newGoalData = {
-        ...goalToUpdate,
-        ...newGoal,
-        spent: id === '1' ? '0% of your budget so far' : `$0 on ${newGoal.category} so far`,
-        lastEdit: currentTime.toISOString(),
-        hasEdited: true,
-      };
-    }
+        const expenses = {};
+        for (const goal of categoryGoalsData) {
+          expenses[goal.category] = (await categorySpent(goal.category, userData.email)).toFixed(2);
+        }
+        setCategoryExpenses(expenses);
+      } catch (error) {
+        console.error('Error fetching category goals: ', error);
+      }
+    };
+      
+    const unsubscribe = onSnapshot(collection(db, `users/${userData.email}/expenses`), () => {
+      fetchCategoryGoals();
+    });
 
-    const newData = isNewGoal
-      ? [...goalsData, newGoalData]
-      : goalsData.map((item) =>
-          item.id === id ? newGoalData : item
-        );
+    return () => unsubscribe();
+  }, [userData.email]);
 
-    setGoalsData(newData);
-    setModalVisible(false);
-    setIsNewGoal(false);
+  useEffect(() => {
+    const fetchData = async () => {
+      const totalExpenses = await fetchMonthlyExpenses(userData.email);
+      const userIncome = await fetchUserIncome(userData.email);
+      setTotalExpenditure(totalExpenses);
+      setIncome(userIncome);
+    };
 
-    try {
-      const userDocRef = doc(db, 'users', userData.email);
-      const goalsCollectionRef = collection(userDocRef, 'goals');
-      const goalDocRef = doc(goalsCollectionRef, id);
-      await setDoc(goalDocRef, newGoalData);
-      console.log('Document written with ID: ', id);
-    } catch (e) {
-      console.error('Error adding document: ', e);
-    }
-  };
+    const expensesUnsubscribe = onSnapshot(collection(db, `users/${userData.email}/expenses`), () => {
+      fetchData();
+    });
+
+    return () => expensesUnsubscribe();
+  }, [userData.email]);
 
   const handleEdit = (item) => {
-    const currentTime = new Date();
-    const lastEditTime = new Date(item.lastEdit);
-    const timeDifference = Math.abs(currentTime - lastEditTime);
-    const oneMonth = 30 * 24 * 60 * 60 * 1000;
-
-    if (item.id === '1' && (!item.hasEdited || timeDifference >= oneMonth)) {
-      // Allow editing for the first time or after one month for the monthly goal
-      setSelectedGoal(item);
-      setModalVisible(true);
-    } else if (item.hasEdited && timeDifference < oneMonth) {
-      Alert.alert(
-        'Edit Restriction',
-        'You can only edit this goal once within a month of setting it.'
-      );
+    if (item.hasEdited >= 2) {
+      Alert.alert('Edit Restriction', 'You can only edit this goal once within a month of setting it.');
       return;
-    } else {
-      setSelectedGoal(item);
-      setModalVisible(true);
+    }
+    setSelectedGoal(item);
+    setModalVisible(true);
+    setIsNewGoal(false);
+  };
+
+  const handleSave = async (oldGoal, newGoal) => {
+    const currentTime = new Date();
+    const newEditedMonthly = editedMonthly + 1;
+
+    const newGoalData = {
+      id: newGoal.id,
+      amount: newGoal.amount,
+      hasEdited: newEditedMonthly,
+      category: newGoal.category || oldGoal.category,
+      lastEdit: currentTime.toISOString(),
+    };
+
+    if (newGoal.category) {
+      // Category goal
+      newGoalData.id = `${newGoal.category} goal`;
+    }
+  
+    setEditedMonthly(newEditedMonthly);
+    setGoalsData(prevGoals => {
+      const updatedGoals = prevGoals.filter(goal => goal.id !== newGoalData.id);
+      return [...updatedGoals, newGoalData];
+    });
+  
+    try {
+      const userDocRef = doc(db, 'users', userData.email);
+      const goalDocRef = doc(userDocRef, 'goals', newGoalData.id);
+  
+      await setDoc(goalDocRef, newGoalData); // Save data to Firestore
+
+      setEditedMonthly(newEditedMonthly);
+      setModalVisible(false);
+      setIsNewGoal(false);
+    } catch (error) {
+      console.error('Error updating goal: ', error);
     }
   };
 
-  const renderGoalItem = ({ item }) => (
-    <View style={styles.card}>
-      <View style={styles.goalTextContainer}>
-        <Text style={styles.title}>
-          {item.title}{' '}
-          <Text style={styles.amount}>{item.amount}</Text>{' '}
-          {item.description}{' '}
-          {item.category && (
-            <Text>
-              on <Text style={styles.categoryText}>{item.category}</Text>
-            </Text>
-          )}
-        </Text>
-        <Text style={styles.spent}>You have spent {item.spent}</Text>
+  const spentPercentage = calculateSpentPercentage(income, parseFloat(goalsData[0].amount), totalExpenditure).toFixed(2);
+
+  const renderCategoryItem = ({ item }) => {
+    const categorySpentAmount = categoryExpenses[item.category]|| 0;
+    return (
+      <View style={styles.card}>
+        <Text style={styles.title}>I want to spend a maximum of</Text>
+        <View style={styles.amountContainer}>
+          <Text style={styles.amount}>${item.amount}</Text>
+          <Text style={styles.description}>on </Text>
+          <Text style={styles.categoryText}>{item.category}</Text>
+          <Text style={styles.description}>this month</Text>
+        </View>
+        <View style={styles.spentContainer}>
+          <Text style={styles.spent}>You have spent ${categorySpentAmount} on {item.category} so far</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => {
+            setIsEditing(true);
+            handleEdit(item);
+          }}
+        >
+          <Text style={styles.editText}>Edit</Text>
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity
-        style={styles.editButton}
-        onPress={() => handleEdit(item)}
-      >
-        <Text style={styles.editText}>{item.editText}</Text>
-      </TouchableOpacity>
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={goalsData}
-        renderItem={renderGoalItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        ListFooterComponent={() => (
+      {goalsData.map((item) => (
+        <View style={styles.card}>
+            <Text style={styles.title}>I want to save</Text>
+            <View style={styles.amountContainer}>
+              <Text style={styles.amount}>${item.amount}</Text>
+              <Text style={styles.description}>this month</Text>
+            </View>
+            <View style={styles.spentContainer}>
+                  <Text style={styles.spent}>You have spent {spentPercentage}% of your budget so far</Text>
+            </View>
           <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => {
+                setIsEditing(true);
+                handleEdit(item);
+              }}
+          >
+              <Text style={styles.editText}>Edit</Text>
+          </TouchableOpacity>
+        </View>
+      ))}
+
+      <FlatList
+        data={categoryGoals}
+        renderItem={renderCategoryItem}
+        keyExtractor={item => item.id}
+        ListFooterComponent={() => (
+          <TouchableOpacity 
             style={styles.newGoalButton}
             onPress={() => {
-              setSelectedGoal({ id: '', title: '', amount: '$0', category: '', description: '', spent: '', editText: 'Save' });
               setIsNewGoal(true);
+              setIsEditing(false);
               setModalVisible(true);
-            }}
+            }} 
           >
             <Text style={styles.newGoalButtonText}>+ Add New Goal</Text>
           </TouchableOpacity>
         )}
       />
+
+      
       <Modal
         animationType="slide"
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <GoalInputScreen
-          goal={selectedGoal}
-          onSave={(newGoal) => handleSave(selectedGoal.id, newGoal)}
-          onClose={() => setModalVisible(false)}
-          isNewGoal={isNewGoal}
-          userData={userData} // Pass userData to GoalInputScreen
-        />
+        {isEditing ? (
+          <GoalEditScreen
+            goal={selectedGoal}
+            onSave={(newGoal) => handleSave(selectedGoal, newGoal)}
+            onClose={() => setModalVisible(false)}
+            userData={userData}
+          />
+        ) : (
+          <GoalInputScreen
+            goal={selectedGoal}
+            onSave={(newGoal) => handleSave(selectedGoal, newGoal)}
+            onClose={() => setModalVisible(false)}
+            isNewGoal={true}
+            userData={userData}
+          />
+        )}
       </Modal>
     </View>
   );
@@ -237,6 +267,7 @@ const styles = StyleSheet.create({
     shadowRadius: 1,
     elevation: 3,
     position: 'relative',
+    marginHorizontal: 20,
   },
   goalTextContainer: {
     flex: 1,
@@ -245,16 +276,31 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  amountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  description: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginLeft: 5,
+  },
+  spentContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   amount: {
-    fontSize: 24,
+    fontSize: 30,
     fontWeight: 'bold',
     color: '#000',
     marginHorizontal: 5, // Add space around amount
   },
   categoryText: {
-    fontSize: 16,
+    fontSize: 25,
     fontWeight: 'bold',
     color: '#000',
+    marginHorizontal: 5,
   },
   spent: {
     fontSize: 14,
@@ -290,5 +336,3 @@ const styles = StyleSheet.create({
     fontWeight: 'bold'
   },
 });
-
-export default GoalsScreen;

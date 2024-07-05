@@ -1,45 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, TextInput, StyleSheet, Modal, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import DropDownPicker from 'react-native-dropdown-picker';
 import NumberKeyboardModal from './NumberKeyboardModal';
-import { doc, collection, getDocs } from 'firebase/firestore';
+import { doc, setDoc} from 'firebase/firestore';
 import { db } from '../../firebaseConfig'; // Ensure this is the correct path to your firebaseConfig file
 
-const GoalInputScreen = ({ goal, onSave, onClose, isNewGoal, userData }) => {
-  const [amount, setAmount] = useState(0);
-  const [category, setCategory] = useState('');
+export default function GoalInputScreen ({ goal, onSave, onClose, isNewGoal, userData }) {
+  const [amount, setAmount] = useState(goal.amount.replace('$', ''));
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const [categories, setCategories] = useState([]);
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    try {
-      const categoriesCollectionRef = collection(doc(db, 'users', userData.email), 'categories');
-      const categoriesSnapshot = await getDocs(categoriesCollectionRef);
-      const categoriesList = categoriesSnapshot.docs.map(doc => ({ label: doc.data().category, value: doc.data().category }));
-      setCategories(categoriesList);
-    } catch (error) {
-      console.error('Error fetching categories: ', error);
-    }
-  };
 
   const handleSetAmount = (inputAmount) => {
     setAmount(inputAmount);
     setKeyboardVisible(false);
   };
 
-  const handleSave = () => {
-    if (isNewGoal && amount && category) {
-      onSave({ amount: `${amount}`, category });
-    } else if (amount) {
-      onSave({ amount: `${amount}`, category });
-    } else {
-      alert('Please enter the amount');
+  const handleSave = async () => {
+    try {
+      const userDocRef = doc(db, 'users', userData.email);
+      const goalDocRef = doc(userDocRef, 'goals', 'Monthly goal'); // Assuming 'monthly goal' is your document ID
+      const currentTime = new Date();
+
+      const updatedGoalData = {
+        ...goal,
+        amount: `${amount}`,
+        hasEdited: goal.hasEdited + 1,
+        lastEdit: currentTime.toISOString(),
+      };
+
+      await setDoc(goalDocRef, updatedGoalData); // Update goal data in Firestore
+
+      onSave(updatedGoalData); // Callback to update state in parent component
+      onClose(); // Close modal after saving
+
+      console.log('Goal updated successfully.');
+    } catch (error) {
+      console.error('Error updating goal: ', error);
     }
   };
 
@@ -59,32 +54,7 @@ const GoalInputScreen = ({ goal, onSave, onClose, isNewGoal, userData }) => {
             onClose={() => setKeyboardVisible(false)}
             onSetAmount={handleSetAmount}
           />
-          {(isNewGoal) && (
-            <>
-              <Text style={styles.label}>Category</Text>
-              <View style={styles.pickerContainer}>
-                {isNewGoal ? (
-                  <DropDownPicker
-                    open={open}
-                    value={category}
-                    items={categories}
-                    setOpen={setOpen}
-                    setValue={setCategory}
-                    setItems={setCategories}
-                    placeholder="Select Category"
-                    style={styles.dropdown}
-                    textStyle={styles.dropdownText}
-                    containerStyle={styles.dropdownContainer}
-                    dropDownContainerStyle={styles.dropdownDropdown}
-                  />
-                ) : (
-                  <View style={styles.fixedCategoryContainer}>
-                    <Text style={styles.fixedCategory}>{category}</Text>
-                  </View>
-                )}
-              </View>
-            </>
-          )}
+          
           <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
             <Text style={styles.saveButtonText}>Save</Text>
           </TouchableOpacity>
@@ -176,5 +146,3 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
-
-export default GoalInputScreen;
