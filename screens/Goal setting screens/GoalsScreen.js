@@ -24,8 +24,8 @@ export default function GoalsScreen ({ userData }) {
   const [selectedGoal, setSelectedGoal] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isNewGoal, setIsNewGoal] = useState(false);
+  const [isMonthly, setIsMonthly] = useState(false);
   const [editedMonthly, setEditedMonthly] = useState(0);
-  const [monthlyAmount, setMonthlyAmount] = useState(0);
   const [totalExpenditure, setTotalExpenditure] = useState(0);
   const [income, setIncome] = useState(0);
 
@@ -109,40 +109,51 @@ export default function GoalsScreen ({ userData }) {
     setIsNewGoal(false);
   };
 
-  const handleSave = async (oldGoal, newGoal) => {
+  const handleSaveNewGoal = async (newGoal) => {
     const currentTime = new Date();
-    const newEditedMonthly = editedMonthly + 1;
-
+    
     const newGoalData = {
       id: newGoal.id,
       amount: newGoal.amount,
-      hasEdited: newEditedMonthly,
-      category: newGoal.category || oldGoal.category,
+      hasEdited: newGoal.hasEdited,
+      category: newGoal.category,
       lastEdit: currentTime.toISOString(),
     };
-
-    if (newGoal.category) {
-      // Category goal
-      newGoalData.id = `${newGoal.category} goal`;
-    }
-  
-    setEditedMonthly(newEditedMonthly);
-    setGoalsData(prevGoals => {
-      const updatedGoals = prevGoals.filter(goal => goal.id !== newGoalData.id);
-      return [...updatedGoals, newGoalData];
-    });
   
     try {
-      const userDocRef = doc(db, 'users', userData.email);
-      const goalDocRef = doc(userDocRef, 'goals', newGoalData.id);
-  
-      await setDoc(goalDocRef, newGoalData); // Save data to Firestore
-
-      setEditedMonthly(newEditedMonthly);
+      setCategoryGoals(prevGoals => [...prevGoals, newGoalData]);
       setModalVisible(false);
       setIsNewGoal(false);
     } catch (error) {
-      console.error('Error updating goal: ', error);
+      console.error('Error creating new goal: ', error);
+    }
+  };
+  
+  const handleSaveEditGoal = async (oldGoal, updatedGoal) => {
+    const currentTime = new Date();
+    const newEditedMonthly = oldGoal.hasEdited + 1;
+  
+    const updatedGoalData = {
+      id: oldGoal.id,
+      amount: updatedGoal.amount,
+      hasEdited: newEditedMonthly,
+      category: oldGoal.category,
+      lastEdit: currentTime.toISOString(),
+    };
+  
+    try {
+      isMonthly ?
+      setGoalsData(prevGoals => {
+        const updatedGoals = prevGoals.filter(goal => goal.id !== updatedGoalData.id);
+        return [...updatedGoals, updatedGoalData];
+      })
+      : setCategoryGoals(prevGoals => {
+        const updatedGoals = prevGoals.filter(goal => goal.id !== updatedGoalData.id);
+        return [...updatedGoals, updatedGoalData];
+      });
+      setModalVisible(false);
+    } catch (error) {
+      console.error('Error editing goal: ', error);
     }
   };
 
@@ -165,6 +176,7 @@ export default function GoalsScreen ({ userData }) {
         <TouchableOpacity
           style={styles.editButton}
           onPress={() => {
+            setIsMonthly(false);
             setIsEditing(true);
             handleEdit(item);
           }}
@@ -190,6 +202,7 @@ export default function GoalsScreen ({ userData }) {
           <TouchableOpacity
               style={styles.editButton}
               onPress={() => {
+                setIsMonthly(true);
                 setIsEditing(true);
                 handleEdit(item);
               }}
@@ -216,7 +229,6 @@ export default function GoalsScreen ({ userData }) {
           </TouchableOpacity>
         )}
       />
-
       
       <Modal
         animationType="slide"
@@ -227,14 +239,13 @@ export default function GoalsScreen ({ userData }) {
         {isEditing ? (
           <GoalEditScreen
             goal={selectedGoal}
-            onSave={(newGoal) => handleSave(selectedGoal, newGoal)}
+            onSave={(updatedGoal) => handleSaveEditGoal(selectedGoal, updatedGoal)}
             onClose={() => setModalVisible(false)}
             userData={userData}
           />
         ) : (
           <GoalInputScreen
-            goal={selectedGoal}
-            onSave={(newGoal) => handleSave(selectedGoal, newGoal)}
+            onSave={(newGoal) => handleSaveNewGoal(newGoal)}
             onClose={() => setModalVisible(false)}
             isNewGoal={true}
             userData={userData}
@@ -327,7 +338,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 20,
+    marginVertical: 5,
+    marginBottom: 100,
     alignSelf: 'center', // Center horizontally
   },
   newGoalButtonText: {

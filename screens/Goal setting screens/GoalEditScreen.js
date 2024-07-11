@@ -5,7 +5,7 @@ import NumberKeyboardModal from './NumberKeyboardModal';
 import { doc, setDoc} from 'firebase/firestore';
 import { db } from '../../firebaseConfig'; // Ensure this is the correct path to your firebaseConfig file
 
-export default function GoalInputScreen ({ goal, onSave, onClose, isNewGoal, userData }) {
+export default function GoalInputScreen ({ goal, onSave, onClose, userData }) {
   const [amount, setAmount] = useState(goal.amount.replace('$', ''));
   const [keyboardVisible, setKeyboardVisible] = useState(false);
 
@@ -17,7 +17,7 @@ export default function GoalInputScreen ({ goal, onSave, onClose, isNewGoal, use
   const handleSave = async () => {
     try {
       const userDocRef = doc(db, 'users', userData.email);
-      const goalDocRef = doc(userDocRef, 'goals', 'Monthly goal'); // Assuming 'monthly goal' is your document ID
+      const goalDocRef = doc(userDocRef, 'goals', goal.id); // Assuming 'monthly goal' is your document ID
       const currentTime = new Date();
 
       const updatedGoalData = {

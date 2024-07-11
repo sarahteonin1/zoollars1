@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, Modal, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, Modal, TouchableWithoutFeedback, Keyboard, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import DropDownPicker from 'react-native-dropdown-picker';
 import NumberKeyboardModal from './NumberKeyboardModal';
-import { doc, collection, getDocs } from 'firebase/firestore';
+import { doc, collection, getDocs, setDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig'; // Ensure this is the correct path to your firebaseConfig file
 
-const GoalInputScreen = ({ goal, onSave, onClose, isNewGoal, userData }) => {
+const GoalInputScreen = ({ onSave, onClose, isNewGoal, userData }) => {
   const [amount, setAmount] = useState(0);
   const [category, setCategory] = useState('');
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -20,8 +20,18 @@ const GoalInputScreen = ({ goal, onSave, onClose, isNewGoal, userData }) => {
   const fetchCategories = async () => {
     try {
       const categoriesCollectionRef = collection(doc(db, 'users', userData.email), 'categories');
-      const categoriesSnapshot = await getDocs(categoriesCollectionRef);
-      const categoriesList = categoriesSnapshot.docs.map(doc => ({ label: doc.data().category, value: doc.data().category }));
+      const goalsCollectionRef = collection(doc(db, 'users', userData.email), 'goals');
+
+      const [categoriesSnapshot, goalsSnapshot] = await Promise.all([
+        getDocs(categoriesCollectionRef),
+        getDocs(goalsCollectionRef)
+      ]);
+
+      const existingGoals = goalsSnapshot.docs.map(doc => doc.data().category);
+      const categoriesList = categoriesSnapshot.docs
+        .map(doc => ({ label: doc.data().category, value: doc.data().category }))
+        .filter(category => !existingGoals.includes(category.value));
+
       setCategories(categoriesList);
     } catch (error) {
       console.error('Error fetching categories: ', error);
@@ -33,13 +43,36 @@ const GoalInputScreen = ({ goal, onSave, onClose, isNewGoal, userData }) => {
     setKeyboardVisible(false);
   };
 
-  const handleSave = () => {
-    if (isNewGoal && amount && category) {
-      onSave({ amount: `${amount}`, category });
-    } else if (amount) {
-      onSave({ amount: `${amount}`, category });
-    } else {
-      alert('Please enter the amount');
+  const handleSave = async () => {
+    if (amount === 0) {
+      Alert.alert('Error', 'Please enter a valid amount');
+      return;
+    }
+    if (category === '') {
+      Alert.alert('Error', 'Please select a category');
+      return;
+    }
+    
+    try {
+      const userDocRef = doc(db, 'users', userData.email);
+      const currentTime = new Date();
+
+      const newGoalData = {
+        id: `${category} goal`,
+        amount: amount,
+        hasEdited: 1,
+        category: category,
+        lastEdit: currentTime.toISOString(),
+      };
+
+      const goalDocRef = doc(userDocRef, 'goals', newGoalData.id);
+
+      await setDoc(goalDocRef, newGoalData); // Save data to Firestore
+
+      onSave(newGoalData); // Callback to update state in parent component
+      onClose(); // Close modal after saving
+    } catch (error) {
+      console.error('Error saving goal: ', error);
     }
   };
 
@@ -50,6 +83,7 @@ const GoalInputScreen = ({ goal, onSave, onClose, isNewGoal, userData }) => {
           <Icon name="chevron-back-outline" size={24} color="black" />
         </TouchableOpacity>
         <View style={styles.centerContainer}>
+          {/* Amount */}
           <Text style={styles.label}>Amount</Text>
           <TouchableOpacity style={styles.inputButton} onPress={() => setKeyboardVisible(true)}>
             <Text style={styles.input}>{amount}</Text>
@@ -59,32 +93,21 @@ const GoalInputScreen = ({ goal, onSave, onClose, isNewGoal, userData }) => {
             onClose={() => setKeyboardVisible(false)}
             onSetAmount={handleSetAmount}
           />
-          {(isNewGoal) && (
-            <>
-              <Text style={styles.label}>Category</Text>
-              <View style={styles.pickerContainer}>
-                {isNewGoal ? (
-                  <DropDownPicker
-                    open={open}
-                    value={category}
-                    items={categories}
-                    setOpen={setOpen}
-                    setValue={setCategory}
-                    setItems={setCategories}
-                    placeholder="Select Category"
-                    style={styles.dropdown}
-                    textStyle={styles.dropdownText}
-                    containerStyle={styles.dropdownContainer}
-                    dropDownContainerStyle={styles.dropdownDropdown}
-                  />
-                ) : (
-                  <View style={styles.fixedCategoryContainer}>
-                    <Text style={styles.fixedCategory}>{category}</Text>
-                  </View>
-                )}
-              </View>
-            </>
-          )}
+          {/* Category */}
+          <Text style={styles.label}>Category</Text>
+            <DropDownPicker
+              open={open}
+              value={category}
+              items={categories}
+              setOpen={setOpen}
+              setValue={setCategory}
+              setItems={setCategories}
+              placeholder="Select Category"
+              style={styles.dropdown}
+              textStyle={styles.dropdownText}
+              containerStyle={styles.dropdownContainer}
+              dropDownContainerStyle={styles.dropdownDropdown}
+            />
           <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
             <Text style={styles.saveButtonText}>Save</Text>
           </TouchableOpacity>
@@ -130,12 +153,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#000',
   },
-  pickerContainer: {
-    width: '80%',
-    marginBottom: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   dropdown: {
     borderColor: 'transparent',
   },
@@ -147,7 +164,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
-    width: "100%",
+    width: "80%",
   },
   dropdownDropdown: {
     borderColor: '#ccc',
@@ -169,6 +186,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 20,
   },
   saveButtonText: {
     color: '#fff',
