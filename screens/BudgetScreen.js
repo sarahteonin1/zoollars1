@@ -108,32 +108,44 @@ export default function BudgetScreen({ userData }) {
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
     endOfWeek.setHours(23, 59, 59, 999);
-  
+    console.log('start date', startOfWeek);
+    console.log('end date', endOfWeek.toDateString());
+
+    const parseDateString = (dateStr) => {
+      const [day, month, year] = dateStr.split(' ');
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return new Date(`${year}-${months.indexOf(month) + 1}-${day}`);
+    };
+
     const expensesRef = collection(db, `users/${userDocRef.id}/expenses`);
-    const q = query(expensesRef, where('date', '>=', startOfWeek), where('date', '<=', endOfWeek));
-  
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+
+    const unsubscribe = onSnapshot(expensesRef, (querySnapshot) => {
       const expenses = [];
       querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        data.date = new Date(data.date); // Ensure date is in Date format
-        expenses.push(data);
+          const data = doc.data();
+          // Parse the date string into a Date object for comparison
+          const expenseDate = parseDateString(data.formattedDate);
+
+          // Check if the expense date is within the start and end of the week
+          if (expenseDate >= startOfWeek && expenseDate <= endOfWeek) {
+              expenses.push(data);
+          }
       });
-  
+
       let total = 0;
       let categorySpendings = {};
-  
+
       expenses.forEach((expense) => {
-        if (expense.type === 'Expenditure') {
-          total += parseFloat(expense.amount);
-          if (categorySpendings[expense.category]) {
-            categorySpendings[expense.category] += parseFloat(expense.amount);
-          } else {
-            categorySpendings[expense.category] = parseFloat(expense.amount);
+          if (expense.type === 'Expenditure') {
+              total += parseFloat(expense.amount);
+              if (categorySpendings[expense.category]) {
+                  categorySpendings[expense.category] += parseFloat(expense.amount);
+              } else {
+                  categorySpendings[expense.category] = parseFloat(expense.amount);
+              }
           }
-        }
       });
-  
+
       setTotalSpendings(total);
   
       const formattedChartData = Object.keys(categorySpendings).map(category => ({
@@ -150,42 +162,57 @@ export default function BudgetScreen({ userData }) {
   const fetchWeeklySpendingByDay = async () => {
     const userDocRef = doc(db, 'users', userData.email);
     const today = new Date();
-    const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
     const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(endOfWeek.getDate() + 6);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
   
+    // Helper function to parse the date string
+    const parseDateString = (dateStr) => {
+      const [day, month, year] = dateStr.split(' ');
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return new Date(`${year}-${months.indexOf(month) + 1}-${day}`);
+    };
+
     const expensesRef = collection(db, `users/${userDocRef.id}/expenses`);
-    const q = query(expensesRef, where('date', '>=', startOfWeek), where('date', '<=', endOfWeek));
-  
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const expenses = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        data.date = data.date.toDate ? data.date.toDate() : new Date(data.date); // Convert Firestore Timestamp to Date
-        expenses.push(data);
-      });
-  
-      let daySpendings = {};
-  
-      expenses.forEach((expense) => {
-        if (expense.type === 'Expenditure') {
-          const day = expense.date.getDay();
-          if (daySpendings[day]) {
-            daySpendings[day] += parseFloat(expense.amount);
-          } else {
-            daySpendings[day] = parseFloat(expense.amount);
-          }
-        }
-      });
-  
-      const formattedChartData = Object.keys(daySpendings).map(day => ({
-        value: daySpendings[day],
-        label: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day],
-      }));
-  
-      setWeeklySpendingData(formattedChartData);
+    
+    const unsubscribe = onSnapshot(expensesRef, (querySnapshot) => {
+        const expenses = [];
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            // Parse the date string into a Date object for comparison
+            const expenseDate = parseDateString(data.formattedDate);
+
+            // Check if the expense date is within the start and end of the week
+            if (expenseDate >= startOfWeek && expenseDate <= endOfWeek) {
+                data.date = expenseDate;
+                expenses.push(data);
+            }
+        });
+
+        let daySpendings = {};
+
+        expenses.forEach((expense) => {
+            if (expense.type === 'Expenditure') {
+                const day = expense.date.getDay();
+                if (daySpendings[day]) {
+                    daySpendings[day] += parseFloat(expense.amount);
+                } else {
+                    daySpendings[day] = parseFloat(expense.amount);
+                }
+            }
+        });
+
+        const formattedChartData = Object.keys(daySpendings).map(day => ({
+            value: daySpendings[day],
+            label: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day],
+        }));
+
+        setWeeklySpendingData(formattedChartData);
     });
-  
+
     return () => unsubscribe();
   };
 
@@ -195,13 +222,28 @@ export default function BudgetScreen({ userData }) {
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
-    const expensesRef = collection(db, `users/${userDocRef.id}/expenses`);
-    const q = query(expensesRef, where('date', '>=', startOfMonth.toDateString()), where('date', '<=', endOfMonth.toDateString()));
+    console.log('start date', startOfMonth.toDateString());
+    console.log('end date', endOfMonth.toDateString());
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    const parseDateString = (dateStr) => {
+      const [day, month, year] = dateStr.split(' ');
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return new Date(`${year}-${months.indexOf(month) + 1}-${day}`);
+    };
+
+    const expensesRef = collection(db, `users/${userDocRef.id}/expenses`);
+
+    const unsubscribe = onSnapshot(expensesRef, (querySnapshot) => {
       const expenses = [];
       querySnapshot.forEach((doc) => {
-        expenses.push(doc.data());
+          const data = doc.data();
+          // Parse the date string into a Date object for comparison
+          const expenseDate = parseDateString(data.formattedDate);
+
+          // Check if the expense date is within the start and end of the week
+          if (expenseDate >= startOfMonth && expenseDate <= endOfMonth) {
+              expenses.push(data);
+          }
       });
 
       let total = 0;
