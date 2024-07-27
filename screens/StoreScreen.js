@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Image, StyleSheet, TouchableOpacity, Dimensions, Modal } from 'react-native';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
 const animals = [
@@ -36,7 +36,10 @@ const StoreScreen = ({ userData, onPurchase }) => {
       const updatedUserData = { ...userData, zoollars: newCoins };
 
       try {
-        await setDoc(doc(db, 'users', userData.email), updatedUserData);
+        await updateDoc(doc(db, 'users', userData.email), {
+          zoollars: newCoins,
+          animals: arrayUnion(selectedAnimal),
+        });
       } catch (error) {
         console.error("Error updating user data: ", error);
       }
@@ -233,3 +236,4 @@ const styles = StyleSheet.create({
 });
 
 export default StoreScreen;
+

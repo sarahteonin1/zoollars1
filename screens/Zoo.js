@@ -1,31 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, Image } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const initialPositions = [
-  { top: 125, left: 25 },   // Position 1
-  { top: 100, left: 75 },   // Position 2
-  { top: 75, left: 125 },  // Position 3
-  { top: 55, left: 160 },  // Position 4
+  { top: 100, left: 70 },   // Position 1: Top-left
+  { top: 120, left: 110 },  // Position 2: Middle-left
+  { top: 150, left: 150 },  // Position 3: Top-right
+  { top: 170, left: 190 },  // Position 4: Bottom-left
+  { top: 120, left: 25 },   // Position 5
+  { top: 145, left: 70 },   // Position 6
+  { top: 170, left: 110 },  // Position 7
+  { top: 190, left: 150 },  // Position 8
+  { top: 80, left: 110 },   // Position 9
+  { top: 110, left: 150 },  // Position 10
+  { top: 130, left: 190 }   // Position 11
 ];
 
 export default function Zoo({ userData, purchasedAnimal }) {
-  const [animals, setAnimals] = useState([]);
-
-  useEffect(() => {
-    const loadAnimals = async () => {
-      try {
-        const storedAnimals = await AsyncStorage.getItem('animals');
-        if (storedAnimals) {
-          setAnimals(JSON.parse(storedAnimals));
-        }
-      } catch (error) {
-        console.error('Failed to load animals from storage', error);
-      }
-    };
-
-    loadAnimals();
-  }, []);
+  const [animals, setAnimals] = useState(userData.animals || []);
 
   useEffect(() => {
     if (purchasedAnimal) {
@@ -37,16 +28,6 @@ export default function Zoo({ userData, purchasedAnimal }) {
       };
       const updatedAnimals = [...animals, newAnimal];
       setAnimals(updatedAnimals);
-
-      const saveAnimals = async () => {
-        try {
-          await AsyncStorage.setItem('animals', JSON.stringify(updatedAnimals));
-        } catch (error) {
-          console.error('Failed to save animals to storage', error);
-        }
-      };
-
-      saveAnimals();
     }
   }, [purchasedAnimal]);
 
@@ -59,11 +40,19 @@ export default function Zoo({ userData, purchasedAnimal }) {
           style={styles.zooBackground}
           resizeMode="contain"
         />
-        {animals.map((animal) => (
+        {animals.map((animal, index) => (
           <Image
-            key={animal.id}
+            key={index}
             source={{ uri: animal.imageUrl }}
-            style={[styles.animal, animal.position]}
+            style={[
+              styles.animal,
+              {
+                top: (animal.position && animal.position.top) || initialPositions[index % initialPositions.length].top,
+                left: (animal.position && animal.position.left) || initialPositions[index % initialPositions.length].left
+              }
+            ]}
+            resizeMode="contain"
+
           />
         ))}
       </View>

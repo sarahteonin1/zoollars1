@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, Image, Modal, TouchableOpacity } from 'react-native';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig'; // Ensure this is the correct path to your firebaseConfig file
+import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 
 const initialChallenges = [
-  { id: '1', text: 'Save 10% more than goal', reward: 100, completed: false },
-  { id: '2', text: 'Spend below your budget', reward: 150, completed: false },
-  { id: '3', text: 'Make 5 friends on Zoollars!', reward: 200, completed: false },
-  { id: '4', text: 'Buy your first animal <3', reward: 200, completed: false },
-  { id: '5', text: 'Become a zoo expert and buy 5 animals!', reward: 300, completed: false },
-  { id: '6', text: 'Save 20% more than your goal', reward: 350, completed: false },
-  { id: '7', text: 'Save 50% of your income', reward: 400, completed: false }
+  { id: '1', text: 'Save 10% more than goal', reward: 100, completed: false, redeemed: false },
+  { id: '2', text: 'Spend below your budget', reward: 150, completed: false, redeemed: false },
+  { id: '3', text: 'Make 5 friends on Zoollars!', reward: 200, completed: false, redeemed: false },
+  { id: '4', text: 'Buy your first animal <3', reward: 200, completed: false, redeemed: false },
+  { id: '5', text: 'Become a zoo expert and buy 5 animals!', reward: 300, completed: false, redeemed: false },
+  { id: '6', text: 'Save 20% more than your goal', reward: 350, completed: false, redeemed: false },
+  { id: '7', text: 'Save 50% of your income', reward: 400, completed: false, redeemed: false }
 ];
 
 const ChallengesScreen = ({ userData }) => {
@@ -19,15 +19,18 @@ const ChallengesScreen = ({ userData }) => {
   const [selectedChallenge, setSelectedChallenge] = useState(null);
 
   useEffect(() => {
+    if (!userData) return;
+
     const fetchUserData = async () => {
       try {
-        const userRef = doc(db, 'users', userData.email); // Use email as the document ID
+        const userRef = doc(db, 'users', userData.email);
         const userDoc = await getDoc(userRef);
         if (userDoc.exists()) {
           const userChallenges = userDoc.data().challenges || {};
           const updatedChallenges = initialChallenges.map(challenge => ({
             ...challenge,
-            completed: userChallenges[challenge.id] || false
+            completed: userChallenges[challenge.id]?.completed || false,
+            redeemed: userChallenges[challenge.id]?.redeemed || false
           }));
           setChallenges(updatedChallenges);
         }
@@ -38,6 +41,60 @@ const ChallengesScreen = ({ userData }) => {
     fetchUserData();
   }, [userData]);
 
+  useEffect(() => {
+    if (!userData) return;
+
+    const checkChallengeCompletion = async () => {
+      try {
+        const userRef = doc(db, 'users', userData.email);
+        const userDoc = await getDoc(userRef);
+        const userDataFetched = userDoc.data();
+
+        const goalsDoc = await getDoc(doc(db, 'users', userData.email, 'goals', 'Monthly goal'));
+        const monthlyGoal = goalsDoc.exists() ? parseFloat(goalsDoc.data().amount) : 0;
+
+        const { totalExpenditure } = await fetchMonthlyExpenses(userData.email);
+        const { totalIncome } = await fetchUserIncome(userData.email);
+
+        const savings = totalIncome - totalExpenditure;
+        const percentageSaved = (monthlyGoal > 0) ? (savings / monthlyGoal) * 100 : 0;
+
+        const updatedChallenges = challenges.map(challenge => {
+          let completed = false;
+          if (challenge.id === '1' && percentageSaved >= 10) {
+            completed = true;
+          } else if (challenge.id === '2' && savings >= monthlyGoal) {
+            completed = true;
+          } else if (challenge.id === '3' && userDataFetched.friends && userDataFetched.friends.length >= 5) {
+            completed = true;
+          } else if (challenge.id === '4' && userDataFetched.animals && userDataFetched.animals.length >= 1) {
+            completed = true;
+          } else if (challenge.id === '5' && userDataFetched.animals && userDataFetched.animals.length >= 5) {
+            completed = true;
+          } else if (challenge.id === '6' && percentageSaved >= 20) {
+            completed = true;
+          } else if (challenge.id === '7' && totalExpenditure <= totalIncome / 2) {
+            completed = true;
+          }
+          return { ...challenge, completed, redeemed: challenge.redeemed || false };
+        });
+        setChallenges(updatedChallenges);
+
+        // Save the updated challenges to Firestore
+        await setDoc(userRef, {
+          challenges: updatedChallenges.reduce((acc, challenge) => {
+            acc[challenge.id] = { completed: challenge.completed, redeemed: challenge.redeemed };
+            return acc;
+          }, {})
+        }, { merge: true });
+      } catch (error) {
+        console.error("Error checking challenge completion:", error);
+      }
+    };
+
+    checkChallengeCompletion();
+  }, [challenges, userData]);
+
   const handleRedeem = (challenge) => {
     setSelectedChallenge(challenge);
     setModalVisible(true);
@@ -47,18 +104,18 @@ const ChallengesScreen = ({ userData }) => {
     if (selectedChallenge) {
       const updatedChallenges = challenges.map(challenge =>
         challenge.id === selectedChallenge.id
-          ? { ...challenge, completed: true }
+          ? { ...challenge, completed: false, redeemed: true } // Mark as redeemed
           : challenge
       );
       setChallenges(updatedChallenges);
       userData.zoollars += selectedChallenge.reward;
 
-      const userRef = doc(db, 'users', userData.email); // Use email as the document ID
+      const userRef = doc(db, 'users', userData.email);
       try {
         await setDoc(userRef, {
           zoollars: userData.zoollars,
           challenges: updatedChallenges.reduce((acc, challenge) => {
-            acc[challenge.id] = challenge.completed;
+            acc[challenge.id] = { completed: challenge.completed, redeemed: challenge.redeemed };
             return acc;
           }, {})
         }, { merge: true });
@@ -73,18 +130,19 @@ const ChallengesScreen = ({ userData }) => {
   const renderItem = ({ item }) => (
     <View style={styles.challengeItem}>
       <Text style={styles.challengeText}>{item.text}</Text>
-      {!item.completed ? (
+      {item.redeemed ? (
+        <View style={styles.checkMark}>
+          <Text style={styles.checkMarkText}>✓</Text>
+        </View>
+      ) : (
         <Pressable
-          style={[styles.rewardButton, styles.disabledButton]}
-          disabled={true}
+          style={[styles.rewardButton, item.completed ? styles.completedButton : styles.disabledButton]}
+          disabled={!item.completed}
+          onPress={() => item.completed && handleRedeem(item)}
         >
           <Image source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/zoollars.appspot.com/o/visuals%2Fzoollarslogo.png?alt=media&token=cc11f9c7-83d1-479e-9d7f-32a0b4aa2333' }} style={styles.coinIcon} />
           <Text style={styles.rewardText}>{item.reward}</Text>
         </Pressable>
-      ) : (
-        <View style={styles.checkMark}>
-          <Text style={styles.checkMarkText}>✓</Text>
-        </View>
       )}
     </View>
   );
@@ -132,7 +190,7 @@ const styles = StyleSheet.create({
   },
   coinsContainer: {
     alignItems: 'center',
-    marginBottom: 20, // Add margin to separate from challenges list
+    marginBottom: 20,
   },
   coinsText: {
     fontSize: 24,
@@ -154,10 +212,15 @@ const styles = StyleSheet.create({
   rewardButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#6e9277',
     padding: 10,
     borderRadius: 20,
     marginLeft: 10,
+  },
+  completedButton: {
+    backgroundColor: '#6e9277',
+  },
+  disabledButton: {
+    backgroundColor: '#ccc',
   },
   rewardText: {
     color: '#fff',
@@ -169,18 +232,15 @@ const styles = StyleSheet.create({
     height: 20,
   },
   checkMark: {
-    backgroundColor: '#6e9277',
+    backgroundColor: '#fff',
     padding: 10,
-    borderRadius: 20, // To make it circular
-    justifyContent: 'center',
+    borderRadius: 20,
+    marginLeft: 10,
     alignItems: 'center',
-    width: 40, // Adjust width and height for better appearance
-    height: 40,
   },
   checkMarkText: {
-    color: '#fff',
+    color: '#6e9277',
     fontWeight: 'bold',
-    fontSize: 16,
   },
   modalContainer: {
     flex: 1,
@@ -189,9 +249,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
-    width: 300,
+    backgroundColor: '#fff',
     padding: 20,
-    backgroundColor: 'white',
     borderRadius: 10,
     alignItems: 'center',
   },
@@ -207,11 +266,38 @@ const styles = StyleSheet.create({
   confirmButtonText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 16,
-  },
-  disabledButton: {
-    backgroundColor: '#ccc',
   },
 });
 
 export default ChallengesScreen;
+
+async function fetchMonthlyExpenses(userEmail) {
+  const expensesRef = collection(db, `users/${userEmail}/expenses`);
+  const querySnapshot = await getDocs(expensesRef);
+  let totalExpenditure = 0;
+
+  querySnapshot.forEach((doc) => {
+    const data = doc.data();
+    if (data.type === 'Expenditure') {
+      totalExpenditure += parseFloat(data.amount);
+    }
+  });
+
+  return { totalExpenditure };
+}
+
+async function fetchUserIncome(userEmail) {
+  const incomeRef = collection(db, `users/${userEmail}/income`);
+  const querySnapshot = await getDocs(incomeRef);
+  let totalIncome = 0;
+
+  querySnapshot.forEach((doc) => {
+    const data = doc.data();
+    if (data.type === 'Income') {
+      totalIncome += parseFloat(data.amount);
+    }
+  });
+
+  return { totalIncome };
+}
+
