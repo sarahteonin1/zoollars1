@@ -37,7 +37,7 @@ const StoreScreen = ({ userData, onPurchase }) => {
 
       try {
         await updateDoc(doc(db, 'users', userData.email), {
-          zoollars: newCoins,
+          zoollars: userCoins,
           animals: arrayUnion(selectedAnimal),
         });
       } catch (error) {

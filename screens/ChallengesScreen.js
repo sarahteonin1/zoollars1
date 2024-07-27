@@ -104,7 +104,7 @@ const ChallengesScreen = ({ userData }) => {
     if (selectedChallenge) {
       const updatedChallenges = challenges.map(challenge =>
         challenge.id === selectedChallenge.id
-          ? { ...challenge, completed: false, redeemed: true } // Mark as redeemed
+          ? { ...challenge, completed: true, redeemed: true } // Mark as redeemed
           : challenge
       );
       setChallenges(updatedChallenges);
