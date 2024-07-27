@@ -88,11 +88,14 @@ export default function DrawerNav({ onLogout, userData, onPurchase, purchasedAni
       </Drawer.Screen>
       <Drawer.Screen 
         name="Friends" 
-        component={FriendsScreen}
         options={{
           drawerIcon: ({ color }) => <Ionicons name="people-outline" size={27} color="black" paddingLeft={10} />,
         }}
-      />
+        >
+                  {props => <FriendsScreen {...props} userData={userData} />}
+
+        </Drawer.Screen>
+    
     </Drawer.Navigator>
   );
 }
