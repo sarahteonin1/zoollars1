@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import { Text, View, Image, TextInput, StyleSheet, Button, TouchableOpacity, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform } from "react-native";
 import { useNavigation } from '@react-navigation/native';
-import { doc, setDoc, collection, getDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, getDoc, auth } from 'firebase/firestore';
 import 'firebase/firestore';
 import { db } from '../firebaseConfig';
-
 
 export default function SignupScreen1() {
   const [email, setEmail] = useState("");
@@ -32,7 +31,12 @@ export default function SignupScreen1() {
       setErrorMessage("");
     }
 
-    
+    if (!passwordPattern.test(password)) {
+      setPasswordError(true);
+      return;
+    } else {
+      setPasswordError(false);
+    }
 
     const userDocRef = doc(db, 'users', email);
     
@@ -104,19 +108,7 @@ export default function SignupScreen1() {
           <TouchableOpacity style={styles.button} onPress={handleSubmit}>
             <Text style={styles.buttonText}>Sign up with email</Text>
           </TouchableOpacity>
-          <View style={styles.lineContainer}>
-            <View style={styles.line} />
-            <Text style={styles.text3}>  or continue with  </Text>
-            <View style={styles.line} />
-          </View>
           
-          <TouchableOpacity style={styles.googleButton} >
-            <Image source={{uri: "https://firebasestorage.googleapis.com/v0/b/zoollars.appspot.com/o/visuals%2Fgooglelogo2.png?alt=media&token=f382144d-db56-40cd-999a-6a1699d1b460"}}
-            style={styles.image2}
-            resizeMode="contain"
-            />
-            <Text style={styles.google}>Google</Text>
-          </TouchableOpacity>
         </View>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>

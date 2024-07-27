@@ -24,9 +24,8 @@ if (!auth) {
     persistence: getReactNativePersistence(AsyncStorage),
   });
 } else {
-  console.warn('Firebase Auth is already initialized.');
+  // Firebase Auth is already initialized, so do nothing
 }
-
 
 const uploadToFirebase = async (uri, name, onProgress) => {
   const fetchResponse = await fetch(uri);
