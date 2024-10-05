@@ -34,7 +34,9 @@
     "react-native-paper": "^5.12.3",
     "react-native-reanimated": "~3.10.1",
     "react-native-svg": "15.2.0",
-    "react-native-webview": "13.8.6"
+    "react-native-webview": "13.8.6",
+    "expo-dev-client": "~4.0.27",
+    "expo-updates": "~0.25.26"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
